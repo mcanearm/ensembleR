@@ -123,3 +123,119 @@ results <- data.frame(
 print("Model Comparison:")
 print(results)
 ```
+
+```{r}
+# Load required libraries
+library(randomForest)
+library(e1071)
+library(xgboost)
+library(caret)
+library(dplyr)
+
+# Read and preprocess the data
+data <- read.csv("C:/Users/ASUS/Desktop/BIO615/Group Project/heart_disease.csv")
+
+# Convert target variable to factor
+data$num <- as.factor(data$num)
+
+# Handle missing values
+data <- na.omit(data)
+
+# Split data into features and target
+X <- data %>% select(-num)
+y <- data$num
+
+# Create training and test sets
+set.seed(42)
+train_index <- createDataPartition(y, p = 0.8, list = FALSE)
+X_train <- X[train_index, ]
+X_test <- X[-train_index, ]
+y_train <- y[train_index]
+y_test <- y[-train_index]
+
+# 1. Random Forest
+rf_model <- randomForest(x = X_train, 
+                        y = y_train,
+                        ntree = 500,
+                        mtry = sqrt(ncol(X_train)),
+                        importance = TRUE)
+
+rf_pred <- predict(rf_model, X_test)
+rf_cm <- confusionMatrix(rf_pred, y_test)
+print("Random Forest Results:")
+print(rf_cm)
+
+# Plot feature importance
+importance(rf_model)
+varImpPlot(rf_model)
+
+# 2. Support Vector Machine
+# Scale the data
+scale_values <- preProcess(X_train)
+X_train_scaled <- predict(scale_values, X_train)
+X_test_scaled <- predict(scale_values, X_test)
+
+svm_model <- svm(x = X_train_scaled,
+                 y = y_train,
+                 kernel = "radial",
+                 cost = 1,
+                 scale = FALSE)
+
+svm_pred <- predict(svm_model, X_test_scaled)
+svm_cm <- confusionMatrix(svm_pred, y_test)
+print("SVM Results:")
+print(svm_cm)
+
+# 3. XGBoost
+# Convert data to DMatrix format
+dtrain <- xgb.DMatrix(data = as.matrix(X_train), 
+                      label = as.numeric(y_train) - 1)
+dtest <- xgb.DMatrix(data = as.matrix(X_test), 
+                     label = as.numeric(y_test) - 1)
+
+# Set XGBoost parameters
+xgb_params <- list(
+  objective = "multi:softmax",
+  num_class = length(levels(y)),
+  eta = 0.3,
+  max_depth = 6,
+  min_child_weight = 1,
+  subsample = 0.8,
+  colsample_bytree = 0.8
+)
+
+# Train XGBoost model
+xgb_model <- xgb.train(
+  params = xgb_params,
+  data = dtrain,
+  nrounds = 100,
+  watchlist = list(train = dtrain, test = dtest),
+  early_stopping_rounds = 10,
+  verbose = 0
+)
+
+# Make predictions
+xgb_pred <- predict(xgb_model, as.matrix(X_test))
+xgb_pred <- factor(xgb_pred, levels = 0:(length(levels(y))-1))
+xgb_cm <- confusionMatrix(xgb_pred, y_test)
+print("XGBoost Results:")
+print(xgb_cm)
+
+# Feature importance for XGBoost
+importance_matrix <- xgb.importance(model = xgb_model)
+print("XGBoost Feature Importance:")
+print(importance_matrix)
+
+# Compare model performances
+results <- data.frame(
+  Model = c("Random Forest", "SVM", "XGBoost"),
+  Accuracy = c(rf_cm$overall["Accuracy"],
+               svm_cm$overall["Accuracy"],
+               xgb_cm$overall["Accuracy"]),
+  Kappa = c(rf_cm$overall["Kappa"],
+            svm_cm$overall["Kappa"],
+            xgb_cm$overall["Kappa"])
+)
+print("Model Comparison:")
+print(results)
+```
