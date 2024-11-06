@@ -1,24 +1,32 @@
 #' @title Random Forest
 #' @description Fit a random forest model using the ranger package
+#' @import ranger
+#' @param ... Additional fitting arguments to be passed to ranger function
+#' @param X Covariates for fitting
+#' @param y target variable
 fit_rf <- function(X, y, ...) {
     # Do the model fitting for an arbitrary set of y and X covariates
-    rf_model <- ranger::ranger(mpg ~ ., data = cars, num.trees = 500, mtry = 2, importance = 'impurity')
+
+    # assumed that all preprocessing is done prior to this step
+    fit_df <- cbind.data.frame(y, X)
+    rf_model <- ranger::ranger(y ~ ., data = fit_df, ...)
     rf_model
 }
 
 
 #' @title SVM
 #' @description
-#' Fit a small SVM on arbitrary inputs:w
+#' Fit a small SVM on arbitrary inputs
 fit_svm <- function(X, y, ...) {
-    svm_model <- e1071::svm(mpg ~ ., data = cars, kernel = "radial")
+    fit_df <- cbind.data.frame(y, X)
+    svm_model <- e1071::svm(y ~ ., data = fit_df, ...)
+    svm_model
 }
 
 
+#' @title XGB
 fit_xgb <- function(X, y, ...) {
-    # chatGPT generated
-    xgb_model <- xgboost::xgboost(data = train_data, label = train_label, max_depth = 3, eta = 0.1, nrounds = 50, objective = "multi:softmax", num_class = 3)
+    fit_df <- cbind.data.frame(y, X)
+    xgb_model <- xgboost::xgboost(data = as.matrix(X), label=y, objective="reg:squarederror", nrounds=1000)
     xgb_model
 }
-
-
