@@ -6,6 +6,13 @@
 \usage{
 fit_rf(X, y, ...)
 }
+\arguments{
+\item{X}{Covariates for fitting}
+
+\item{y}{target variable}
+
+\item{...}{Additional fitting arguments to be passed to ranger function}
+}
 \description{
 Fit a random forest model using the ranger package
 }

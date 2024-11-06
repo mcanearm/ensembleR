@@ -7,4 +7,10 @@ Author: Who wrote it
 Maintainer: Who to complain to <yourfault@somewhere.net>
 Description: More about what it does (maybe more than one line)
 License: What license is it under?
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
+Imports: 
+    ranger,
+    xgboost,
+    caret,
+    e1071,
+    rstan

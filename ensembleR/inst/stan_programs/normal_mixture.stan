@@ -1,15 +1,23 @@
+/*
+Generate a simple normal mixture model. This is fit like a linear regression,
+with the exception that the betas in this case are a "simplex", which in
+STAN means that the weights all add up to 1.
+
+We also allow very general priors here, but these could be changed somehow.
+TODO:
+    1) Investigate better ways to do the mixture
+    2) How can we take into account covariance between predictions (predictions that miss more often should indicate missed in the other models too!)
+*/
 data {
-  int<lower=0> N;               // Number of data samples
-  int<lower=0> K;               // Number of models
-  vector[N] y_true;             // Vector of true labels
-  matrix[N, K] f_pred;          // Prediction matrix for each model; each column represents predictions from one model
+  int<lower=0> N;
+  int<lower=0> K;
+  matrix[N, K] y_hat;
+  vector[N] y;
 }
 parameters {
-  simplex[K] w;                 // Weights for each model; 'simplex' type ensures the weights sum to 1
-  real<lower=0> sigma;          // Standard deviation of the prediction error
+  simplex[K] beta;
+  real<lower=0> sigma;
 }
 model {
-  w ~ dirichlet(rep_vector(1.0, K));  // Dirichlet prior for weights, with all parameters set to 1 (indicating equal prior belief for each model)
-  sigma ~ normal(0, 1);                // Prior for sigma, with a normal distribution centered at 0 and a standard deviation of 1
-  y_true ~ normal(f_pred * w, sigma);  // Model the true labels as normally distributed around a weighted sum of predictions, with standard deviation sigma
+  y ~ normal(y_hat * beta, sigma);
 }
