@@ -39,8 +39,6 @@ fitSTANModel <- function(y_hat, Y, ...) {
 
     # Sample from the posterior
     fit <- rstan::sampling(sm, data = data_list, ...)
-
-    class(fit) <- c("fitSTANModel", class(fit))
     fit
 }
 
