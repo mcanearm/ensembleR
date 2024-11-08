@@ -25,8 +25,7 @@
 #' }
 fitAggregationFunction <- function(y_hat, Y, ...) {
     # Compile and run the STAN model
-    # stan_model <- system.file("stan_programs", "normal_mixture.stan", package = "ensembleR")
-    stan_model <- "~/Projects/ensembleR/ensembleR/inst/stan_programs/normal_mixture.stan"
+    # stan_model <- system.file("stan_programs/normal_mixture.stan", package = "ensembleR")
 
     data_list <- list(
         y = Y,
@@ -36,7 +35,8 @@ fitAggregationFunction <- function(y_hat, Y, ...) {
     )
 
     # Compile the STAN model
-    sm <- rstan::stan_model(stan_model)
+    # sm <- rstan::stan_model(stan_model)
+    sm <- readRDS(system.file("stan_programs/normal_mixture.rds", package = "ensembleR"))
 
     # Sample from the posterior
     fit <- rstan::sampling(sm, data = data_list, ...)
