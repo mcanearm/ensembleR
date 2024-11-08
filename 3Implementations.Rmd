@@ -114,3 +114,38 @@ results <- data.frame(
 print("Model Comparison:")
 print(results)
 ```
+
+```{r}
+# Calculate additional metrics
+rf_mae <- MAE(rf_pred, y_test)
+rf_r2 <- R2(rf_pred, y_test)
+
+svm_mae <- MAE(svm_pred, y_test)
+svm_r2 <- R2(svm_pred, y_test)
+
+xgb_mae <- MAE(xgb_pred, y_test)
+xgb_r2 <- R2(xgb_pred, y_test)
+
+# Print additional metrics
+print("Random Forest MAE and R2:")
+print(rf_mae)
+print(rf_r2)
+
+print("SVM MAE and R2:")
+print(svm_mae)
+print(svm_r2)
+
+print("XGBoost MAE and R2:")
+print(xgb_mae)
+print(xgb_r2)
+
+# Update the results dataframe to include MAE and R2
+results <- data.frame(
+  Model = c("Ranger (Fast RF)", "SVM", "XGBoost"),
+  RMSE = c(rf_rmse, svm_rmse, xgb_rmse),
+  MAE = c(rf_mae, svm_mae, xgb_mae),
+  R2 = c(rf_r2, svm_r2, xgb_r2)
+)
+print("Model Performance Comparison:")
+print(results)
+```
