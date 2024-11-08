@@ -46,6 +46,8 @@ fitAggregationFunction <- function(y_hat, Y, ...) {
     sd_ests <- apply(Y - y_hat, 2, sd)
 
     aggregate_fn <- function(pred_matrix, alpha = 0.025) {
+        # TODO: this assumes the exact same mix choice for each prediction, which
+        # may or may not be appropriate.
         mix_choice <- apply(sims$beta, 1, function(probs) {
             sample(1:length(probs), 1, prob = probs)
         })
