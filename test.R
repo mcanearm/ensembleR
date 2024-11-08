@@ -54,17 +54,10 @@ rmse <- function(y, y_hat) {
 val_rmse <- apply(val_y_hats, 2, function(y_hat) rmse(val_y_true, y_hat))
 val_rmse
 
-# now fit weights using validation set
-# stan_mod <- fitSTANModel(y_hats, y_true, verbose=TRUE)
-# create_density_fn <- function(y) {
-#     kde <- density(y)
-#     function(x) {
-#         approx(x = kde$x, y = kde$y, xout = x)$y
-#     }
-#
-# }
 
-agg_fn <- fitAggregationFunction(val_y_hats, val_y_true)
+agg_fn <- fitAggregationFunction(val_y_hats, val_y_true, cores=4)
+
+plot(agg_fn)
 
 lm_pred_test <- predict(lm_fit, test_df)
 rf_pred_test <- predict(rf_fit, test_df)$predictions
@@ -73,7 +66,8 @@ xgb_pred_test <- predict(xgb_fit, as.matrix(cbind(test_df[, c("Rings", "Height",
 y_hats <- cbind('lm'=lm_pred_test, 'rf'=rf_pred_test, 'xgb'=xgb_pred_test)
 y_true <- test_df$shucked_weight_g
 
-test_predictions <- agg_fn(y_hats, alpha=0.025)
+test_predictions <- predict(agg_fn, y_hats, alpha=0.025)
+test_predictions
 
 weight_preds <- cbind.data.frame(test_predictions, y_true)
 my_predictions <- weight_preds[sample(1:nrow(weight_preds), 100),]

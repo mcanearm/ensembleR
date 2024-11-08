@@ -9,19 +9,19 @@
 #' @importFrom rstan stan_model sampling
 #' @examples
 #' \dontrun{
-#'     # Make three small test models for mixing
-#'     y_hat1 <- rnorm(1000, 3, 1)
-#'     y_hat2 <- rnorm(1000, 3, 1.5)
-#'     y_hat3 <- rnorm(1000, 3, 0.5)
+#' # Make three small test models for mixing
+#' y_hat1 <- rnorm(1000, 3, 1)
+#' y_hat2 <- rnorm(1000, 3, 1.5)
+#' y_hat3 <- rnorm(1000, 3, 0.5)
 #'
-#'     y_hat <- cbind(y_hat1, y_hat2, y_hat3)
-#'     w <- c(0.5, 0.2, 0.3)
-#'     y <- (y_hat %*% w + rnorm(1000))[, 1]
+#' y_hat <- cbind(y_hat1, y_hat2, y_hat3)
 #'
-#'     stan_fit <- fitSTANModel(y, y_hat)
-#'     all_samples <- as.matrix(stan_fit)
-#'     rstan::traceplot(stan_fit)
-#'     hist(all_samples[, 1])
+#' w <- c(0.5, 0.2, 0.3)
+#' y <- (y_hat %*% w + rnorm(1000))[, 1]
+#'
+#' agg_fn <- fitAggregationFunction(y, y_hat)
+#' agg_fn(y_hat)
+#' plot(fitAggregationFunction)
 #' }
 fitAggregationFunction <- function(y_hat, Y, ...) {
     # Compile and run the STAN model
@@ -39,10 +39,10 @@ fitAggregationFunction <- function(y_hat, Y, ...) {
     sm <- rstan::stan_model(stan_model)
 
     # Sample from the posterior
-    fit <- rstan::sampling(sm, data = data_list, cores = 4)
+    fit <- rstan::sampling(sm, data = data_list, ...)
 
     # get only the simulations for the beta and sigma draws
-    sims <- rstan::extract(fit, pars = c("beta", "sigma"))
+    sims <- rstan::extract(fit, pars = c("beta"))
     sd_ests <- apply(Y - y_hat, 2, sd)
 
     aggregate_fn <- function(pred_matrix, alpha = 0.025) {
@@ -66,5 +66,21 @@ fitAggregationFunction <- function(y_hat, Y, ...) {
             'upper' = pi[, 2]
         )
     }
-    aggregate_fn
+
+    structure(
+        list(stan_fit = fit, aggregate_fn = aggregate_fn),
+        class = c("ModelAggregator", "list")
+    )
+}
+
+
+#' @export
+plot.ModelAggregator <- function(obj, ...) {
+    rstan::traceplot(obj$stan_fit, ...)
+}
+
+
+#' @export
+predict.ModelAggregator <- function(obj, y_hat, alpha, ...) {
+    obj$aggregate_fn(y_hat, alpha)
 }

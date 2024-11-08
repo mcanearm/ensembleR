@@ -20,18 +20,18 @@ Then, return a function that aggregates an unessen set of predictions.
 }
 \examples{
 \dontrun{
-    # Make three small test models for mixing
-    y_hat1 <- rnorm(1000, 3, 1)
-    y_hat2 <- rnorm(1000, 3, 1.5)
-    y_hat3 <- rnorm(1000, 3, 0.5)
+# Make three small test models for mixing
+y_hat1 <- rnorm(1000, 3, 1)
+y_hat2 <- rnorm(1000, 3, 1.5)
+y_hat3 <- rnorm(1000, 3, 0.5)
 
-    y_hat <- cbind(y_hat1, y_hat2, y_hat3)
-    w <- c(0.5, 0.2, 0.3)
-    y <- (y_hat \%*\% w + rnorm(1000))[, 1]
+y_hat <- cbind(y_hat1, y_hat2, y_hat3)
 
-    stan_fit <- fitSTANModel(y, y_hat)
-    all_samples <- as.matrix(stan_fit)
-    rstan::traceplot(stan_fit)
-    hist(all_samples[, 1])
+w <- c(0.5, 0.2, 0.3)
+y <- (y_hat \%*\% w + rnorm(1000))[, 1]
+
+agg_fn <- fitAggregationFunction(y, y_hat)
+agg_fn(y_hat)
+plot(fitAggregationFunction)
 }
 }

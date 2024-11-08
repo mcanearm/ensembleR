@@ -2,6 +2,8 @@
 
 S3method(ensembleR::plot,ModelEnsemble)
 S3method(ensembleR::summary,ModelEnsemble)
+S3method(plot,ModelAggregator)
+S3method(predict,ModelAggregator)
 export(fitAggregationFunction)
 export(fit_models)
 import(ranger)
