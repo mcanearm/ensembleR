@@ -19,5 +19,9 @@ parameters {
   real<lower=0> sigma;
 }
 model {
-  y ~ normal(y_hat * beta, sigma);
+    vector[N] y_pred;
+    for (i in 1:N) {
+        y_pred[i] = dot_product(y_hat[i], beta);
+    }
+    y ~ normal(y_pred, sigma);
 }

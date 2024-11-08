@@ -3,7 +3,6 @@ library(ensembleR)
 library(ggplot2)
 
 
-
 names <- c(
     "Sex",
     "Length",
@@ -57,37 +56,15 @@ val_rmse
 
 # now fit weights using validation set
 # stan_mod <- fitSTANModel(y_hats, y_true, verbose=TRUE)
-create_density_fn <- function(y) {
-    kde <- density(y)
-    function(x) {
-        approx(x = kde$x, y = kde$y, xout = x)$y
-    }
+# create_density_fn <- function(y) {
+#     kde <- density(y)
+#     function(x) {
+#         approx(x = kde$x, y = kde$y, xout = x)$y
+#     }
+#
+# }
 
-}
-
-get_aggregator <- function(y_hats, y_true) {
-    den_fns <- apply(y_hats, 2, create_density_fn)
-    eps <- y_true - y_hats
-    bias <- colMeans(eps)
-    sigma_ests <- apply(eps , 2, sd)
-    weight_predictions <- function(pred_matrix, sims=1000) {
-        # centered_preds <- pred_matrix - bias
-        centered_preds <- pred_matrix
-        pdf_ests <- sapply(1:ncol(pred_matrix), function(j) {
-            den_fns[[j]](centered_preds[,j])
-        })
-
-        weight_mat <- pdf_ests/rowSums(pdf_ests)
-        draws <- t(sapply(1:nrow(weight_mat), function(i) {
-            j <- sample(1:ncol(weight_mat), sims, prob=weight_mat[i,], replace=TRUE)
-            rnorm(sims, centered_preds[i, j], sigma_ests[j])
-        }))
-        draws
-    }
-    weight_predictions
-}
-
-agg_fn <- get_aggregator(val_y_hats, val_y_true)
+agg_fn <- fitAggregationFunction(val_y_hats, val_y_true)
 
 lm_pred_test <- predict(lm_fit, test_df)
 rf_pred_test <- predict(rf_fit, test_df)$predictions
@@ -96,22 +73,19 @@ xgb_pred_test <- predict(xgb_fit, as.matrix(cbind(test_df[, c("Rings", "Height",
 y_hats <- cbind('lm'=lm_pred_test, 'rf'=rf_pred_test, 'xgb'=xgb_pred_test)
 y_true <- test_df$shucked_weight_g
 
-test_predictions <- agg_fn(y_hats)
+test_predictions <- agg_fn(y_hats, alpha=0.025)
 
-pis <- t(apply(test_predictions, 1, quantile, probs = c(0.025, 0.975)))
-
-weight_preds <- cbind.data.frame('y_tilde'= rowMeans(test_predictions), pis, y_true)
+weight_preds <- cbind.data.frame(test_predictions, y_true)
 my_predictions <- weight_preds[sample(1:nrow(weight_preds), 100),]
 my_predictions[, 'index'] = 1:nrow(my_predictions)
-my_predictions$in_interval <- my_predictions$y_true > my_predictions$`2.5%` & my_predictions$y_true < my_predictions$`97.5%`
+my_predictions$in_interval <- my_predictions$y_true > my_predictions$lower & my_predictions$y_true < my_predictions$upper
 
 
-ggplot(data=my_predictions, aes(x=index, y=y_true, color=in_interval)) + geom_point() + geom_errorbar(aes(ymin=`2.5%`, ymax=`97.5%`, width=0)) + scale_color_manual(values=c("red", "black"))
+ggplot(data=my_predictions, aes(x=index, y=y_true, color=in_interval)) + geom_point() + geom_errorbar(aes(ymin=lower, ymax=upper, width=0)) + scale_color_manual(values=c("red", "black"))
 
 mean(my_predictions$in_interval)
-y_hat <- rowMeans(test_predictions)
 
 apply(y_hats, 2, function(y_hat) rmse(y_true, y_hat))
-rmse(y_hat, y_true)
+rmse(test_predictions[, 1], y_true)
 
 
