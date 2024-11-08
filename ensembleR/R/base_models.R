@@ -27,6 +27,6 @@ fit_svm <- function(X, y, ...) {
 #' @title XGB
 fit_xgb <- function(X, y, ...) {
     fit_df <- cbind.data.frame(y, X)
-    xgb_model <- xgboost::xgboost(data = as.matrix(X), label=y, objective="reg:squarederror", nrounds=1000)
+    xgb_model <- xgboost::xgboost(data = as.matrix(X), label=y, objective="reg:squarederror", ...)
     xgb_model
 }

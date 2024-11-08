@@ -14,3 +14,6 @@ Imports:
     caret,
     e1071,
     rstan
+Depends: 
+    R (>= 2.10)
+LazyData: true
