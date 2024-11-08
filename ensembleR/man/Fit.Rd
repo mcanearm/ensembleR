@@ -4,7 +4,7 @@
 \alias{fit_models}
 \title{Fit models}
 \usage{
-fit_models(X, y, xgb_params = NULL, rf_params = NULL, svm_params = NULL)
+fit_models(X, y, ...)
 }
 \description{
 Fit models
