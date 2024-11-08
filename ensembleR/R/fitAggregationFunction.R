@@ -42,7 +42,7 @@ fitAggregationFunction <- function(y_hat, Y, ...) {
     fit <- rstan::sampling(sm, data = data_list, ...)
 
     # get only the simulations for the beta and sigma draws
-    sims <- rstan::extract(fit, pars = c("beta"))
+    sims <- rstan::extract(fit, pars = c("beta", "sigma"))
     sd_ests <- apply(Y - y_hat, 2, sd)
 
     aggregate_fn <- function(pred_matrix, alpha = 0.025) {
@@ -60,7 +60,7 @@ fitAggregationFunction <- function(y_hat, Y, ...) {
         })
 
         pi <- t(apply(predicted_dists, 2, function(preds) {
-            quantile(preds, probs = c(0.025, 0.975))
+            quantile(preds, probs = c(alpha, 1-alpha))
         }))
         cbind(
             'mean' = colMeans(predicted_dists),
