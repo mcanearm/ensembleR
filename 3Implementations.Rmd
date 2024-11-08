@@ -1,25 +1,26 @@
 ```{r}
 # Load required libraries
-library(ranger)  # replace randomForest
-library(e1071)
-library(xgboost)
+library(ranger)    # for Random Forest
+library(e1071)     # for SVM
+library(xgboost)   # for XGBoost
 library(caret)
 library(dplyr)
 
-# Read and preprocess the data
-data <- read.csv("C:/Users/ASUS/Desktop/BIO615/Group Project/heart_disease.csv")
+# Read and preprocess data
+data <- read.csv("C:/Users/ASUS/Desktop/BIO615/Group Project/abalone.csv", header = TRUE)
 
-# Convert target variable to factor
-data$num <- as.factor(data$num)
+# Set target variable as numeric for regression
+data$Rings <- as.numeric(data$Rings)
 
-# Handle missing values
-data <- na.omit(data)
+# Separate features and target variable
+X <- data %>% select(-Rings)
+y <- data$Rings
 
-# Split data into features and target
-X <- data %>% select(-num)
-y <- data$num
+# Convert categorical variable (Sex) to numeric
+X <- X %>%
+  mutate(Sex = as.numeric(factor(Sex, levels = c("M", "F", "I"))))
 
-# Create training and test sets
+# Split data into training and testing sets
 set.seed(42)
 train_index <- createDataPartition(y, p = 0.8, list = FALSE)
 X_train <- X[train_index, ]
@@ -27,22 +28,20 @@ X_test <- X[-train_index, ]
 y_train <- y[train_index]
 y_test <- y[-train_index]
 
-# 1. Ranger (Fast Random Forest)
+# 1. Use Ranger (Fast Random Forest) for Regression
 rf_model <- ranger(
-  dependent.variable.name = "num",
-  data = cbind(X_train, num = y_train),
+  dependent.variable.name = "Rings",
+  data = cbind(X_train, Rings = y_train),
   num.trees = 500,
   mtry = floor(sqrt(ncol(X_train))),
-  importance = 'impurity',  # Use impurity as a measure of importance
-  probability = TRUE  # If probabilistic predictions are needed
+  importance = 'impurity'  # Use impurity as a measure of importance
 )
 
-# prediction and evaluation
-rf_pred <- predict(rf_model, data = X_test)
-rf_predictions <- factor(max.col(rf_pred$predictions), levels = levels(y_test))
-rf_cm <- confusionMatrix(rf_predictions, y_test)
-print("Ranger (Fast Random Forest) Results:")
-print(rf_cm)
+# Prediction and evaluation
+rf_pred <- predict(rf_model, data = X_test)$predictions
+rf_rmse <- RMSE(rf_pred, y_test)
+print("Ranger (Fast Random Forest) RMSE:")
+print(rf_rmse)
 
 # Feature importance
 importance_scores <- data.frame(
@@ -53,7 +52,7 @@ importance_scores <- importance_scores[order(importance_scores$Importance, decre
 print("Feature Importance:")
 print(importance_scores)
 
-# 2. Support Vector Machine
+# 2. Use Support Vector Machine (SVM) for Regression
 # Scale the data
 scale_values <- preProcess(X_train)
 X_train_scaled <- predict(scale_values, X_train)
@@ -63,24 +62,22 @@ svm_model <- svm(x = X_train_scaled,
                  y = y_train,
                  kernel = "radial",
                  cost = 1,
+                 type = "eps-regression",
                  scale = FALSE)
 
 svm_pred <- predict(svm_model, X_test_scaled)
-svm_cm <- confusionMatrix(svm_pred, y_test)
-print("SVM Results:")
-print(svm_cm)
+svm_rmse <- RMSE(svm_pred, y_test)
+print("SVM RMSE:")
+print(svm_rmse)
 
-# 3. XGBoost
+# 3. Use XGBoost for Regression
 # Convert data to DMatrix format
-dtrain <- xgb.DMatrix(data = as.matrix(X_train), 
-                      label = as.numeric(y_train) - 1)
-dtest <- xgb.DMatrix(data = as.matrix(X_test), 
-                     label = as.numeric(y_test) - 1)
+dtrain <- xgb.DMatrix(data = as.matrix(X_train), label = y_train)
+dtest <- xgb.DMatrix(data = as.matrix(X_test), label = y_test)
 
 # Set XGBoost parameters
 xgb_params <- list(
-  objective = "multi:softmax",
-  num_class = length(levels(y)),
+  objective = "reg:squarederror",  # For regression
   eta = 0.3,
   max_depth = 6,
   min_child_weight = 1,
@@ -88,7 +85,7 @@ xgb_params <- list(
   colsample_bytree = 0.8
 )
 
-# Train XGBoost model
+# Train the XGBoost model
 xgb_model <- xgb.train(
   params = xgb_params,
   data = dtrain,
@@ -100,10 +97,9 @@ xgb_model <- xgb.train(
 
 # Make predictions
 xgb_pred <- predict(xgb_model, as.matrix(X_test))
-xgb_pred <- factor(xgb_pred, levels = 0:(length(levels(y))-1))
-xgb_cm <- confusionMatrix(xgb_pred, y_test)
-print("XGBoost Results:")
-print(xgb_cm)
+xgb_rmse <- RMSE(xgb_pred, y_test)
+print("XGBoost RMSE:")
+print(xgb_rmse)
 
 # Feature importance for XGBoost
 importance_matrix <- xgb.importance(model = xgb_model)
@@ -113,88 +109,8 @@ print(importance_matrix)
 # Compare model performances
 results <- data.frame(
   Model = c("Ranger (Fast RF)", "SVM", "XGBoost"),
-  Accuracy = c(rf_cm$overall["Accuracy"],
-               svm_cm$overall["Accuracy"],
-               xgb_cm$overall["Accuracy"]),
-  Kappa = c(rf_cm$overall["Kappa"],
-            svm_cm$overall["Kappa"],
-            xgb_cm$overall["Kappa"])
+  RMSE = c(rf_rmse, svm_rmse, xgb_rmse)
 )
 print("Model Comparison:")
 print(results)
-```
-
-```{r}
-# Create a y_hat matrix that combines the predictions of each model in columns
-y_hat <- cbind(
-  rf_pred = as.numeric(as.character(rf_predictions)),
-  svm_pred = as.numeric(as.character(svm_pred)),
-  xgb_pred = as.numeric(as.character(xgb_pred))
-)
-
-
-# Use the fitAggregationFunction for integration
-agg_fn_obj <- fitAggregationFunction(Y = y_test, y_hat = y_hat)
-
-# Use the aggregate function to generate the final prediction
-agg_results <- agg_fn_obj$aggregate_fn(y_hat)
-print("Aggregated Prediction Results:")
-print(agg_results)
-```
-```{r}
-library(rstan)
-
-# compile .stan document
-stan_model <- stan_model("C:/Users/ASUS/Desktop/BIO615/Group Project/normal_mixture.stan")
-
-# save compiled model
-saveRDS(stan_model, "C:/Users/ASUS/Desktop/BIO615/Group Project/normal_mixture.rds")
-
-```
-```{r}
-# Check the data types of Y and y hat
-str(Y)
-str(y_hat)
-
-# Check whether there are missing values
-sum(is.na(Y))
-sum(is.na(y_hat))
-
-# Make sure y_hat is a matrix
-y_hat <- as.matrix(y_hat)
-```
-```{r}
-y_hat <- as.matrix(y_hat)
-str(y_hat)
-```
-```{r}
-y_test <- as.numeric(as.character(y_test))
-str(y_test)
-length(y_test) == nrow(y_hat)  # Result should be TRUE
-```
-```{r}
-library(rstan)
-
-# 重新编译 .stan 文件，并强制保存 DSO
-stan_model <- stan_model("C:/Users/ASUS/Desktop/BIO615/Group Project/normal_mixture.stan", save_dso=TRUE)
-
-# 将编译好的模型保存为 .rds 文件
-saveRDS(stan_model, "C:/Users/ASUS/Desktop/BIO615/Group Project/normal_mixture.rds")
-```
-
-```{r}
-library(rstan)
-
-# 直接加载已编译的 Stan 模型
-stan_model <- readRDS("C:/Users/ASUS/Desktop/BIO615/Group Project/normal_mixture.rds")
-
-# 测试加载结果
-print(stan_model)
-```
-```{r}
-agg_fn_obj <- fitAggregationFunction(Y = y_test, y_hat = y_hat)
-```
-```{r}
-# 在当前平台重新编译 .stan 文件
-stan_model <- stan_model("C:/Users/ASUS/Desktop/BIO615/Group Project/normal_mixture.stan")
 ```
