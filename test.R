@@ -73,10 +73,13 @@ conf_int_coverage <- lapply(alphas, function(alpha) {
 par(mfrow=c(1, 3))
 for (i in 1:length(conf_int_coverage)) {
     target_alpha <- alphas[i]
-    hist(conf_int_coverage[[i]], main=sprintf("alpha=%0.3f", target_alpha*2), xlab="Coverage")
+    hist(conf_int_coverage[[i]], main=sprintf("CI=%i%%", 100*(1-target_alpha*2)), xlab="Coverage",
+         xlim = c(
+             min(1-2*target_alpha, min(conf_int_coverage[[i]])),
+             max(conf_int_coverage[[i]])),
+    cex.lab=1.5, cex.axis=1.5, cex.main=1.5)
     abline(v=1-2*target_alpha, col="red")
 }
-
 
 # my_predictions[, 'index'] = 1:nrow(my_predictions)
 my_predictions$in_interval <- my_predictions$y_true > my_predictions$lower & my_predictions$y_true < my_predictions$upper
