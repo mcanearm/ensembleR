@@ -45,19 +45,24 @@ fitAggregationFunction <- function(y_hat, Y, ...) {
     beta <- c(optimal_beta$par, 1 - sum(optimal_beta$par))
     sigma <- sqrt(beta %*% cov_mat %*% beta)[1]
 
+    calibrator <- ensembleR::fitCalibrator(Y, y_hat %*% beta)
+
     structure(
-        list(aggregate_fn = aggregate_fn, optim_results = optimal_beta),
+        list(optim_results=optimal_beta, sigma=sigma, beta=beta, calibrator=calibrator),
         class = c("ModelAggregator", "list")
     )
+
 }
 
 
 #' @export
 predict.ModelAggregator <- function(obj, y_hat, alpha=0.05, n_trials=1000, ...) {
-    mus <- pred_matrix %*% beta
+    mus <- y_hat %*% obj$beta
+    pred_sd <- predict(obj$calibrator, data.frame("y_hat"=mus))
+    pred_sd <- ifelse(pred_sd < 0, obj$sigma, pred_sd)
     predicted_dists <- matrix(
-        rnorm(n_trials * nrow(pred_matrix), mean = mus, sd = sigma),
-        nrow = nrow(pred_matrix),
+        rnorm(1000*nrow(y_hat), mean = mus, sd = pred_sd),
+        nrow = nrow(y_hat),
         byrow = FALSE
     )
     pi <- t(apply(predicted_dists, 1, function(preds) {
@@ -66,6 +71,7 @@ predict.ModelAggregator <- function(obj, y_hat, alpha=0.05, n_trials=1000, ...) 
     cbind(
         'mean' = rowMeans(predicted_dists),
         'lower' = pi[, 1],
-        'upper' = pi[, 2]
+        'upper' = pi[, 2],
+        'pred_sd' = pred_sd
     )
 }
