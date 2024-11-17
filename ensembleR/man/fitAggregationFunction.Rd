@@ -2,7 +2,7 @@
 % Please edit documentation in R/fitAggregationFunction.R
 \name{fitAggregationFunction}
 \alias{fitAggregationFunction}
-\title{Fit a Normal mixture model on the data using STAN}
+\title{Fit a Normal mixture model on the data}
 \usage{
 fitAggregationFunction(y_hat, Y, ...)
 }
@@ -11,12 +11,12 @@ fitAggregationFunction(y_hat, Y, ...)
 
 \item{Y}{The true Y values for fitting}
 
-\item{...}{Additional arguments to pass to the rstan::sampling function}
+\item{...}{Additional arguments to pass to the optim function}
 }
 \description{
-Fit a STAN model to the predicted outputs in order to aggregate the final predictions.
-Currently, this uses a small mixture model that assumes (1) simplex weights on each model and (2) constant variance across all models.
-Then, return a function that aggregates an unessen set of predictions.
+Fit a normal mixture that maximizes the log likelihood of the of the weights of
+each method. This uses the base R `optim` function to find the optimal weights
+for each method.
 }
 \examples{
 \dontrun{
@@ -30,8 +30,8 @@ y_hat <- cbind(y_hat1, y_hat2, y_hat3)
 w <- c(0.5, 0.2, 0.3)
 y <- (y_hat \%*\% w + rnorm(1000))[, 1]
 
-agg_fn <- fitAggregationFunction(y, y_hat)
-agg_fn(y_hat)
+model_aggregator <- fitAggregationFunction(y, y_hat)
+predict(model_aggregator, y_hat, alpha=0.05)
 plot(fitAggregationFunction)
 }
 }

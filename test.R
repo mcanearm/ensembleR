@@ -51,7 +51,9 @@ val_rmse
 
 agg_fn <- fitAggregationFunction(val_y_hats, val_y_true, cores=4)
 
-plot(agg_fn)
+agg_fn$optim_results
+
+# plot(agg_fn)
 
 lm_pred_test <- predict(lm_fit, test_df)
 rf_pred_test <- predict(rf_fit, test_df)$predictions
@@ -60,6 +62,20 @@ xgb_pred_test <- predict(xgb_fit, as.matrix(cbind(test_df[, keep_names], dummy_v
 y_hats <- cbind('lm'=lm_pred_test, 'rf'=rf_pred_test, 'xgb'=xgb_pred_test)
 y_true <- test_df$Age
 
+test_preds <- predict(agg_fn, y_hats, alpha=0.025)
+
+nrow(test_preds)
+
+apply(y_hats, 2, function(y_hat) rmse(y_true, y_hat))
+rmse(test_preds[, 1], y_true)
+
+fit_df <- cbind.data.frame(val_y_hats, val_y_true)
+fit <- lm(data=fit_df, val_y_true ~ .)
+
+fit2 <- lm(data=fit_df, val_y_true ~ offset(lm) + I(lm-rf) + I(lm-xgb))
+
+pred_y <- predict(fit2, data.frame(y_hats), interval="prediction", level=0.95)
+rmse(y_true, pred_y[, 1])
 
 alphas <- c(0.025, 0.05, 0.10)
 conf_int_coverage <- lapply(alphas, function(alpha) {
@@ -73,20 +89,27 @@ conf_int_coverage <- lapply(alphas, function(alpha) {
 par(mfrow=c(1, 3))
 for (i in 1:length(conf_int_coverage)) {
     target_alpha <- alphas[i]
-    hist(conf_int_coverage[[i]], main=sprintf("alpha=%0.3f", target_alpha*2), xlab="Coverage")
+    hist(conf_int_coverage[[i]], main=sprintf("CI=%i%%", 100*(1-target_alpha*2)), xlab="Coverage",
+         xlim = c(
+             min(1-2*target_alpha, min(conf_int_coverage[[i]])),
+             max(conf_int_coverage[[i]])),
+    cex.lab=1.5, cex.axis=1.5, cex.main=1.5)
     abline(v=1-2*target_alpha, col="red")
 }
 
 
-# my_predictions[, 'index'] = 1:nrow(my_predictions)
+my_predictions <- predict(agg_fn, y_hats, alpha=0.025)
+apply(cbind(my_predictions[, 1], y_hats), 2, function(y_hat) {
+    rmse(y_true, y_hat)
+})
+
+test_preds <- predict(agg_fn, y_hats, alpha=0.025)
+my_predictions <- cbind.data.frame(test_preds, y_true)
 my_predictions$in_interval <- my_predictions$y_true > my_predictions$lower & my_predictions$y_true < my_predictions$upper
-
-mean(my_predictions$in_interval)
-
+my_predictions <- my_predictions[order(my_predictions$y_true), ]
+my_predictions$index <- 1:nrow(my_predictions)
 
 ggplot(data=my_predictions, aes(x=index, y=y_true, color=in_interval)) + geom_point() + geom_errorbar(aes(ymin=lower, ymax=upper, width=0)) + scale_color_manual(values=c("red", "black"))
 
-apply(y_hats, 2, function(y_hat) rmse(y_true, y_hat))
-rmse(test_predictions[, 1], y_true)
 
 
