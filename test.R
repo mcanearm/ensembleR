@@ -98,6 +98,8 @@ for (i in 1:length(conf_int_coverage)) {
 }
 
 
+# TODO: add comparison of interval length
+
 test_preds <- predict(aggregator, y_hats, alpha=0.025)
 my_predictions <- cbind.data.frame(test_preds, y_true)
 my_predictions$in_interval <- my_predictions$y_true > my_predictions$lower & my_predictions$y_true < my_predictions$upper

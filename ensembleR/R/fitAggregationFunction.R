@@ -45,7 +45,9 @@ fitAggregationFunction <- function(y_hat, Y, ...) {
     beta <- c(optimal_beta$par, 1 - sum(optimal_beta$par))
     sigma <- sqrt(beta %*% cov_mat %*% beta)[1]
 
-    calibrator <- ensembleR::fitCalibrator(Y, y_hat %*% beta)
+    calibrator <- ensembleR::fitCalibrator(Y, y_hat %*% beta, y_hat)
+
+    # TODO: consider modifying the bias term and/or fitting the residuals directly
 
     structure(
         list(optim_results=optimal_beta, sigma=sigma, beta=beta, calibrator=calibrator),
@@ -58,7 +60,7 @@ fitAggregationFunction <- function(y_hat, Y, ...) {
 #' @export
 predict.ModelAggregator <- function(obj, y_hat, alpha=0.05, n_trials=1000, ...) {
     mus <- y_hat %*% obj$beta
-    pred_sd <- predict(obj$calibrator, data.frame("y_hat"=mus))
+    pred_sd <- predict(obj$calibrator, data.frame(y_hat))
     pred_sd <- ifelse(pred_sd < 0, obj$sigma, pred_sd)
     predicted_dists <- matrix(
         rnorm(1000*nrow(y_hat), mean = mus, sd = pred_sd),
