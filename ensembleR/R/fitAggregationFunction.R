@@ -23,6 +23,10 @@
 #' plot(fitAggregationFunction)
 #' }
 fitAggregationFunction <- function(y_hat, Y, ...) {
+    # TODO: Instead of calibrating based on a single validation set, use cross validation
+    # to estimate the calibration parameters around:
+    # 1. The standard deviation estimates
+    # 2. A final "stddev discount" parameter that optimizes for the coverage requested.
     # Compile and run the STAN model
 
     cov_mat <- cov(Y - y_hat)
