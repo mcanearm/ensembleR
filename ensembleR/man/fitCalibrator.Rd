@@ -4,7 +4,7 @@
 \alias{fitCalibrator}
 \title{SD Estimator based on Aggregator}
 \usage{
-fitCalibrator(y_true, y_pred, sigma_est, n_smoother = 100, ...)
+fitCalibrator(y_true, y_pred, y_hat, sigma_est, n_smoother = 100, ...)
 }
 \description{
 SD Estimator based on Aggregator

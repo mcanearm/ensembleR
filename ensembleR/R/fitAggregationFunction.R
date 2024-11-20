@@ -22,25 +22,31 @@
 #' predict(model_aggregator, y_hat, alpha=0.05)
 #' plot(fitAggregationFunction)
 #' }
-fitAggregationFunction <- function(y_hat, Y, ...) {
+fitAggregationFunction <- function(y_hat, Y, method="EM", ...) {
+    if (method == "EM") {
+        fitAggregationFunction_EM(y_hat, Y, ...)
+    } else if (method == "optim") {
+        fitAggregationFunction_optim(y_hat, Y, ...)
+    } else {
+        stop("Method must be either 'EM' or 'optim'")
+    }
+}
+
+
+#' @title Fit Aggregation function by Numerical optimization
+#' @describeIn fitAggregationFunction Fit a Normal mixture model on the data using numerical optimization
+fitAggregationFunction_optim <- function(y_hat, Y, ...) {
     # TODO: Instead of calibrating based on a single validation set, use cross validation
     # to estimate the calibration parameters around:
     # 1. The standard deviation estimates
     # 2. A final "stddev discount" parameter that optimizes for the coverage requested.
     # Compile and run the STAN model
-
     cov_mat <- cov(Y - y_hat)
-    nll <- function(beta_vect) {
-        betas <- c(beta_vect, 1 - sum(beta_vect))
-        y_hat_mu <- y_hat %*% betas
-        sigma <- sqrt(betas %*% cov_mat %*% betas)
-        -sum(dnorm(Y, y_hat_mu, sigma, log = TRUE))
-    }
 
     initial <- rep(1 / ncol(y_hat), ncol(y_hat) - 1)
     optimal_beta <- optim(
         initial,
-        nll,
+        log_likelihood,
         method = "L-BFGS-B",
         lower = rep(0, ncol(y_hat)),
         upper = rep(1, ncol(y_hat)),
@@ -50,7 +56,6 @@ fitAggregationFunction <- function(y_hat, Y, ...) {
     sigma <- sqrt(beta %*% cov_mat %*% beta)[1]
 
     calibrator <- ensembleR::fitCalibrator(Y, y_hat %*% beta, y_hat)
-
     # TODO: consider modifying the bias term and/or fitting the residuals directly
 
     structure(
@@ -60,6 +65,73 @@ fitAggregationFunction <- function(y_hat, Y, ...) {
 
 }
 
+
+log_likelihood <- function(beta_vect) {
+    y_hat_mu <- y_hat %*% beta_vect
+    sigma <- sqrt(mean((Y - y_hat_mu)^2))
+    -sum(dnorm(Y, mean = y_hat_mu, sd = sigma, log = TRUE))
+}
+
+
+#' @title Log Likelihood function
+#'
+#' @description Log likelihood method for both numerical optimization and EM
+#' algorithm approaches to finding the optimal mixture.
+ll<- function(beta_vect) {
+    y_hat_mu <- y_hat %*% beta_vect
+    sigma <- sqrt(mean((Y - y_hat_mu)^2))
+    -sum(dnorm(Y, mean = y_hat_mu, sd = sigma, log = TRUE))
+}
+
+
+#' @title Fit aggregation function by EM
+#' @describeIn fitAggregationFunction Fit a Normal mixture model on the data using the EM algorithm
+fitAggregationFunction_EM<- function(y_hat, Y, tol = 1e-6, max_iter = 1000) {
+
+    # Initialize weights (betas) uniformly
+    betas <- rep(1 / k, k)
+
+    # Initialize parameters
+    sigma <- sqrt(mean((Y - y_hat %*% betas)^2))
+    iter <- 0
+    diff <- Inf
+
+    while (iter < max_iter && diff > tol) {
+        # E-step: Compute responsibilities
+        y_hat_mu <- y_hat %*% betas
+        responsibilities <- sapply(1:k, function(j) {
+            beta_temp <- rep(0, k)
+            beta_temp[j] <- 1
+            exp(-log_likelihood(beta_temp))
+        })
+        responsibilities <- responsibilities / rowSums(responsibilities)
+
+        # M-step: Update betas
+        betas_new <- colMeans(responsibilities)
+        sigma_new <- sqrt(mean((Y - y_hat %*% betas_new)^2))
+
+        # Check for convergence
+        diff <- sum(abs(betas - betas_new))
+        betas <- betas_new
+        sigma <- sigma_new
+        iter <- iter + 1
+    }
+
+    if (iter == max_iter) {
+        warning("EM algorithm did not converge within the maximum number of iterations.")
+    }
+
+    # Finalize and return the results
+    structure(
+        list(
+            betas = betas,
+            sigma = sigma,
+            log_likelihood = -log_likelihood(betas),
+            iterations = iter
+        ),
+        class = c("ModelAggregator", "list")
+    )
+}
 
 #' @export
 predict.ModelAggregator <- function(obj, y_hat, alpha=0.05, n_trials=1000, ...) {
