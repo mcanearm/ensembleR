@@ -20,3 +20,19 @@ fitCalibrator <- function(y_true, y_pred, y_hat, sigma_est, n_smoother=100, ...)
     sd_model <- lm(data=sd_df, formula=formula)
     sd_model
 }
+
+
+#' @title Fit Quantile Bounds
+#' @export
+fitQuantileBounds <- function(Y, y_hat, lower_quantile = 0.025, upper_quantile = 0.975) {
+    # Fit lower bound
+    lower_model <- quantreg::rq(Y ~ y_hat, tau = lower_quantile)
+
+    # Fit upper bound
+    upper_model <- quantreg::rq(Y ~ y_hat, tau = upper_quantile)
+
+    list(
+        lower_bound_model = lower_model,
+        upper_bound_model = upper_model
+    )
+}
