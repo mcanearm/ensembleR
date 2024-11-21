@@ -49,9 +49,9 @@ rmse <- function(y, y_hat) {
 val_rmse <- apply(val_y_hats, 2, function(y_hat) rmse(val_y_true, y_hat))
 val_rmse
 
-agg_fn <- fitAggregationFunction(val_y_hats, val_y_true, cores=4)
+aggregator <- fitAggregationFunction(val_y_hats, val_y_true)
 
-agg_fn$optim_results
+# predict(aggregator, val_y_hats)
 
 # plot(agg_fn)
 
@@ -62,9 +62,9 @@ xgb_pred_test <- predict(xgb_fit, as.matrix(cbind(test_df[, keep_names], dummy_v
 y_hats <- cbind('lm'=lm_pred_test, 'rf'=rf_pred_test, 'xgb'=xgb_pred_test)
 y_true <- test_df$Age
 
-test_preds <- predict(agg_fn, y_hats, alpha=0.025)
+test_preds <- predict(aggregator, y_hats, alpha=0.025)
 
-nrow(test_preds)
+test_preds
 
 apply(y_hats, 2, function(y_hat) rmse(y_true, y_hat))
 rmse(test_preds[, 1], y_true)
@@ -79,10 +79,10 @@ rmse(y_true, pred_y[, 1])
 
 alphas <- c(0.025, 0.05, 0.10)
 conf_int_coverage <- lapply(alphas, function(alpha) {
-    predictions <- cbind(predict(agg_fn, y_hats, alpha=alpha), y_true)
+    predictions <- cbind(predict(aggregator, y_hats, alpha=alpha), y_true)
     replicate(100, {
         sample_preds <- predictions[sample(1:nrow(predictions), nrow(predictions), replace=TRUE), ]
-        mean(sample_preds[, 4] > sample_preds[, 2] & sample_preds[, 4] < sample_preds[, 3])
+        mean(sample_preds[, 5] > sample_preds[, 2] & sample_preds[, 5] < sample_preds[, 3])
     })
 })
 
@@ -98,12 +98,9 @@ for (i in 1:length(conf_int_coverage)) {
 }
 
 
-my_predictions <- predict(agg_fn, y_hats, alpha=0.025)
-apply(cbind(my_predictions[, 1], y_hats), 2, function(y_hat) {
-    rmse(y_true, y_hat)
-})
+# TODO: add comparison of interval length
 
-test_preds <- predict(agg_fn, y_hats, alpha=0.025)
+test_preds <- predict(aggregator, y_hats, alpha=0.025)
 my_predictions <- cbind.data.frame(test_preds, y_true)
 my_predictions$in_interval <- my_predictions$y_true > my_predictions$lower & my_predictions$y_true < my_predictions$upper
 my_predictions <- my_predictions[order(my_predictions$y_true), ]
