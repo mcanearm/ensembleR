@@ -26,7 +26,18 @@ fit_svm <- function(X, y, ...) {
 
 #' @title XGB
 fit_xgb <- function(X, y, ...) {
-    fit_df <- cbind.data.frame(y, X)
-    xgb_model <- xgboost::xgboost(data = as.matrix(X), label=y, objective="reg:squarederror", ...)
+    is_char <- apply(X, 2, function(col) {
+        tmp <- suppressWarnings(as.numeric(col))
+        all(is.na(tmp))
+    })
+    char_cols <- colnames(X)[is_char]
+    numeric_cols <- setdiff(colnames(X), char_cols)
+    char_formula <- formula(paste0(" ~ ", paste0(char_cols, collapse = " + ")))
+    dummy_mod <- caret::dummyVars(char_formula, data = X, fullRank = TRUE)
+
+    dummy_vars <- predict(dummy_mod, newdata = X)
+    fit_features <- as.matrix(cbind(X[, numeric_cols], dummy_vars))
+
+    xgb_model <- xgboost::xgboost(data = fit_features, label=y, objective="reg:squarederror", nrounds=250, ...)
     xgb_model
 }

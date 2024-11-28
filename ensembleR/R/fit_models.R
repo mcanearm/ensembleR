@@ -4,15 +4,21 @@
 #' TODO: ADD MORE DOCUMENTATION HERE
 fit_models <- function(X, y, ...) {
     # Fit the models
-    rf_model <- fit_rf(X, y, ...)
-    svm_model <- fit_svm(X, y, ...)
-    xgb_model <- fit_xgb(X, y, ...)
+    rf_model <- ensembleR:::fit_rf(X, y, ...)
+    svm_model <- ensembleR:::fit_svm(X, y, ...)
+    xgb_model <- ensembleR:::fit_xgb(X, y, ...)
+    # lm_model <- lm.fit(X, y)
 
     all_models <- list(rf_model = rf_model, svm_model = svm_model, xgb_model = xgb_model)
     class(all_models) <- c("ModelEnsemble", class(all_models))
 
     all_models
 }
+
+predict.ModelEnsemble <- function(X, ...) {
+    # get predictions from all models at once
+}
+
 
 #' @exportS3Method ensembleR::plot
 plot.ModelEnsemble <- function(obj, ...) {
@@ -21,6 +27,7 @@ plot.ModelEnsemble <- function(obj, ...) {
     # DECIDE HOW TO PLOT - mix of histograms?
     hist(rnorm(100))
 }
+
 
 #' @exportS3Method ensembleR::summary
 summary.ModelEnsemble <- function(obj, ...) {
