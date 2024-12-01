@@ -1,7 +1,7 @@
 #' @title Fit models
 #' @export
 #' @description` Fit all the models + the aggregation function
-fit_models <- function(X, Y, ...) {
+fit_models <- function(X, Y, aggregation_method="lm", calibration_method=NULL, ...) {
     # Split the data into training and validation sets
     train_idx <- sample(1:nrow(X), 0.8 * nrow(X))
     train_X <- X[train_idx, ]
@@ -41,7 +41,11 @@ fit_models <- function(X, Y, ...) {
     y_hat <- cbind(lm_pred, rf_pred, xgb_pred, svm_pred)
 
     # Use EM algorithm to find the optimal weights
-    aggregation_function <- ensembleR::fitAggregationFunction(y_hat, val_Y, ...)
+    aggregation_function <- ensembleR::fitAggregationFunction(val_Y, y_hat, method=aggregation_method, ...)
+    aggregated_predictions <- predict(aggregation_function, y_hat)
+
+    # Now fit the calibration function to ensure proper coverage
+    # calibration_method <- ensembleR::fitCalibrationFunction(val_y, aggregated_predictions, y_hat, method=calibration_method, ...)
 
     # Return all fitted models and the aggregation function
     structure(list(
@@ -51,9 +55,32 @@ fit_models <- function(X, Y, ...) {
         svm_model = svm_fit,
         char_encoder = char_encoder,
         aggregation_function = aggregation_function,
+        # calibrator = calibration_method,
         y_hat=y_hat,
         val_Y=val_Y
     ), class="ModelEnsemble")
+}
+
+predict.ModelEnsemble <- function(obj, X, alpha=0.05) {
+    # Predict the ensemble
+    if (!is.null(obj$char_encoder)) {
+        pred_features <- predict(char_encoder, X)
+    } else {
+        pred_features <- as.matrix(X)
+    }
+
+    # Make predictions for the four models
+    lm_pred <- predict(obj$lm_model, data.frame(X))
+    rf_pred <- predict(obj$rf_model, data.frame(X))$predictions
+    xgb_pred <- predict(obj$xgb_model, xgboost::xgb.DMatrix(data = as.matrix(X)))
+    svm_pred <- predict(obj$svm_model, as.matrix(X))
+
+    # Combine predictions
+    y_hat <- cbind(lm_pred, rf_pred, xgb_pred, svm_pred)
+
+    # Predict the ensemble
+    aggregation <- predict(obj$aggregation_function, y_hat, alpha=alpha)
+    calibrated_estimates <- predict(obj$calibrator, aggregation, y_hat)
 }
 
 

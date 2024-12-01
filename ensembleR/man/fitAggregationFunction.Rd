@@ -6,22 +6,22 @@
 \alias{fitAggregationFunction_EM}
 \title{Fit a Normal mixture model on the data}
 \usage{
-fitAggregationFunction(y_hat, Y, method = "EM", ...)
+fitAggregationFunction(Y, y_hat, method = "EM", ...)
 
-fitAggregationFunction_lm(y_hat, Y, ...)
+fitAggregationFunction_lm(Y, y_hat, ...)
 
 fitAggregationFunction_EM(
-  y_hat,
   Y,
-  tol = 1e-06,
+  y_hat,
+  tol = 1e-04,
   max_iter = 1000,
   verbose = FALSE
 )
 }
 \arguments{
-\item{y_hat}{The predictions output from a model. Note that this is passed as an $NxK$ matrix, where $K$ is the number of predictors.}
-
 \item{Y}{The true Y values for fitting}
+
+\item{y_hat}{The predictions output from a model. Note that this is passed as an $NxK$ matrix, where $K$ is the number of predictors.}
 
 \item{...}{Additional arguments to pass to the optim function}
 }

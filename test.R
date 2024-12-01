@@ -21,8 +21,15 @@ rmse <- function(y, y_hat) {
     sqrt(mean((y - y_hat)^2))
 }
 
+modelEnsemble <- fit_models(X, Y, aggregation_method="EM", verbose=TRUE)
+predict(modelEnsemble, test_df[, -which(names(test_df) == "Age")], alpha=0.05)
 
-modelEnsemble <- fit_models(X, Y, method="lm")
+
+# modelEnsemble <- fit_models(X, Y, aggregation_method="lm")
+
+
+modelEnsemble2$aggregation_function$model
+modelEnsemble$aggregation_function$betas
 
 predict(modelEnsemble, test_df[, -which(names(test_df) == "Age")], alpha=0.05)
 

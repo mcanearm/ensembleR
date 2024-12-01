@@ -4,7 +4,7 @@
 \alias{fitQuantileBounds}
 \title{Fit Quantile Bounds}
 \usage{
-fitQuantileBounds(Y, y_hat, lower_quantile = 0.025, upper_quantile = 0.975)
+fitQuantileBounds(y_true, y_hat, tau = seq(0, 1, by = 0.01))
 }
 \description{
 Fit Quantile Bounds

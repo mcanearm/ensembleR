@@ -2,7 +2,8 @@
 
 S3method(ensembleR::plot,ModelEnsemble)
 S3method(ensembleR::summary,ModelEnsemble)
-S3method(predict,ModelAggregator)
+S3method(predict,ModelAggregator_EM)
+S3method(predict,ModelAggregator_lm)
 S3method(predict,char_encoder)
 export(fitAggregationFunction)
 export(fitAggregationFunction_EM)
