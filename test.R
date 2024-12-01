@@ -1,6 +1,4 @@
-library(caret)
 library(ensembleR)
-library(ggplot2)
 
 
 data(abalone, package="ensembleR")
@@ -9,71 +7,37 @@ abalone$Rings <- NULL
 
 
 train_idx <- sample(1:nrow(abalone), 0.8*nrow(abalone))
-val_set_idx <- sample(train_idx, 0.3*length(train_idx))
-train_set_idx <- setdiff(train_idx, val_set_idx)
 test_set_idx <- setdiff(1:nrow(abalone), train_idx)
 
 test_df <- abalone[test_set_idx, ]
-val_df <- abalone[val_set_idx, ]
-train_df <- abalone[train_set_idx, ]
+train_df <- abalone[train_idx, ]
 
-# predict the shucked weight vs. sex, length, diameter, height, and rings
-lm_fit <- lm(data=train_df, Age ~ .)
 
-# rf model
-rf_fit <- ranger::ranger(data=train_df, Age ~ ., num.trees = 256)
+Y <- train_df$Age
+X <- train_df[, -which(names(train_df) == "Age")]
 
-# xgboost model
-dv <- caret::dummyVars(~ Sex, data=abalone, fullRank=TRUE)
-dummy_vars <- predict(dv, abalone)
-
-keep_names <- setdiff(colnames(train_df), c("Age", "Sex"))
-xgb_train_features <- as.matrix(cbind(train_df[, keep_names], dummy_vars[train_set_idx, ]))
-
-xgb_train_features
-xgb_fit <- xgboost::xgboost(data = xgb_train_features, label=train_df$Age, objective="reg:squarederror", nrounds=500)
-
-# now fit the weights using the validation set
-# predict the shucked weight for the test set
-lm_pred <- predict(lm_fit, val_df)
-rf_pred <- predict(rf_fit, val_df)$predictions
-xgb_pred <- predict(xgb_fit, as.matrix(cbind(val_df[, keep_names], dummy_vars[val_set_idx, ])))
-
-val_y_hats <- cbind('lm'=lm_pred, 'rf'=rf_pred, 'xgb'=xgb_pred)
-val_y_true <- val_df$Age
 
 rmse <- function(y, y_hat) {
     sqrt(mean((y - y_hat)^2))
 }
 
-val_rmse <- apply(val_y_hats, 2, function(y_hat) rmse(val_y_true, y_hat))
-val_rmse
+modelEnsemble_EM <- fit_models(X, Y, aggregation_method="EM", verbose=FALSE)
+modelEnsemble_lm <- fit_models(X, Y, aggregation_method="lm", verbose=FALSE)
 
-aggregator <- fitAggregationFunction(val_y_hats, val_y_true)
 
-# predict(aggregator, val_y_hats)
+pred_em <- predict(modelEnsemble_EM, test_df[, -which(names(test_df) == "Age")], alpha=0.05, return_components=TRUE)
+pred_lm <- predict(modelEnsemble_lm, test_df[, -which(names(test_df) == "Age")], alpha=0.05, return_components=TRUE)
 
-# plot(agg_fn)
 
-lm_pred_test <- predict(lm_fit, test_df)
-rf_pred_test <- predict(rf_fit, test_df)$predictions
-xgb_pred_test <- predict(xgb_fit, as.matrix(cbind(test_df[, keep_names], dummy_vars[test_set_idx, ])))
+# Thankfuly, this is better!
+# apply($y_hat, 2, function(y_hat) rmse(test_df$Age, y_hat))
+rmse(test_df$Age, predictions$aggregated[, "mean"])
 
-y_hats <- cbind('lm'=lm_pred_test, 'rf'=rf_pred_test, 'xgb'=xgb_pred_test)
-y_true <- test_df$Age
 
-test_preds <- predict(aggregator, y_hats, alpha=0.025)
+# TODO: Analyze the coverage of the prediction intervals.
+# Add the calibration step.
 
-test_preds
-
-apply(y_hats, 2, function(y_hat) rmse(y_true, y_hat))
-rmse(test_preds[, 1], y_true)
-
-fit_df <- cbind.data.frame(val_y_hats, val_y_true)
-fit <- lm(data=fit_df, val_y_true ~ .)
-
-fit2 <- lm(data=fit_df, val_y_true ~ offset(lm) + I(lm-rf) + I(lm-xgb))
-
+# IGNORE PLOTS BELOW HERE FOR NOW, BUT PLEASE DON'T DELETE
 pred_y <- predict(fit2, data.frame(y_hats), interval="prediction", level=0.95)
 rmse(y_true, pred_y[, 1])
 

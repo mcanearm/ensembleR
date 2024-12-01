@@ -22,124 +22,45 @@
 #' predict(model_aggregator, y_hat, alpha=0.05)
 #' plot(fitAggregationFunction)
 #' }
-fitAggregationFunction <- function(y_hat, Y, method="EM", ...) {
+fitAggregationFunction <- function(Y, y_hat, method="EM", ...) {
     if (method == "EM") {
-        fitAggregationFunction_EM(y_hat, Y, ...)
-    } else if (method == "optim") {
-        fitAggregationFunction_optim(y_hat, Y, ...)
+        fitAggregationFunction_EM(Y, y_hat, ...)
+    } else if (method == "lm") {
+        fitAggregationFunction_lm(Y, y_hat, ...)
     } else {
-        stop("Method must be either 'EM' or 'optim'")
+        stop("Method must be either 'EM' or 'lm'")
     }
 }
 
 
-#' @title Fit Aggregation function by Numerical optimization
-#' @describeIn fitAggregationFunction Fit a Normal mixture model on the data using numerical optimization
-fitAggregationFunction_optim <- function(y_hat, Y, ...) {
+#' @title Fit Aggregation function by simple LM fit
+#' @describeIn fitAggregationFunction Fit a standard linear model to the data for aggregation.
+fitAggregationFunction_lm <- function(Y, y_hat, ...) {
     # TODO: Instead of calibrating based on a single validation set, use cross validation
     # to estimate the calibration parameters around:
     # 1. The standard deviation estimates
     # 2. A final "stddev discount" parameter that optimizes for the coverage requested.
-    # Compile and run the STAN model
-    cov_mat <- cov(Y - y_hat)
+    y_hat_names <- colnames(y_hat)  # required for using the predict method later with LM...
+    agg_lm <- lm(Y ~ y_hat, data.frame(Y, y_hat))
+    sigma <- sd(agg_lm$residuals)
 
-    initial <- rep(1 / ncol(y_hat), ncol(y_hat) - 1)
-    optimal_beta <- optim(
-        initial,
-        log_likelihood,
-        method = "L-BFGS-B",
-        lower = rep(0, ncol(y_hat)),
-        upper = rep(1, ncol(y_hat)),
-        ...
-    )
-    beta <- c(optimal_beta$par, 1 - sum(optimal_beta$par))
-    sigma <- sqrt(beta %*% cov_mat %*% beta)[1]
-
-    calibrator <- ensembleR::fitCalibrator(Y, y_hat %*% beta, y_hat)
+    # calibrator <- ensembleR::fitCalibrator(Y, agg_lm$fitted.values, y_hat)
     # TODO: consider modifying the bias term and/or fitting the residuals directly
-
     structure(
-        list(optim_results=optimal_beta, sigma=sigma, beta=beta, calibrator=calibrator),
-        class = c("ModelAggregator", "list")
-    )
-
-}
-
-
-log_likelihood <- function(beta_vect) {
-    y_hat_mu <- y_hat %*% beta_vect
-    sigma <- sqrt(mean((Y - y_hat_mu)^2))
-    -sum(dnorm(Y, mean = y_hat_mu, sd = sigma, log = TRUE))
-}
-
-
-#' @title Log Likelihood function
-#'
-#' @description Log likelihood method for both numerical optimization and EM
-#' algorithm approaches to finding the optimal mixture.
-ll<- function(beta_vect) {
-    y_hat_mu <- y_hat %*% beta_vect
-    sigma <- sqrt(mean((Y - y_hat_mu)^2))
-    -sum(dnorm(Y, mean = y_hat_mu, sd = sigma, log = TRUE))
-}
-
-
-#' @title Fit aggregation function by EM
-#' @describeIn fitAggregationFunction Fit a Normal mixture model on the data using the EM algorithm
-fitAggregationFunction_EM<- function(y_hat, Y, tol = 1e-6, max_iter = 1000) {
-
-    # Initialize weights (betas) uniformly
-    betas <- rep(1 / k, k)
-
-    # Initialize parameters
-    sigma <- sqrt(mean((Y - y_hat %*% betas)^2))
-    iter <- 0
-    diff <- Inf
-
-    while (iter < max_iter && diff > tol) {
-        # E-step: Compute responsibilities
-        y_hat_mu <- y_hat %*% betas
-        responsibilities <- sapply(1:k, function(j) {
-            beta_temp <- rep(0, k)
-            beta_temp[j] <- 1
-            exp(-log_likelihood(beta_temp))
-        })
-        responsibilities <- responsibilities / rowSums(responsibilities)
-
-        # M-step: Update betas
-        betas_new <- colMeans(responsibilities)
-        sigma_new <- sqrt(mean((Y - y_hat %*% betas_new)^2))
-
-        # Check for convergence
-        diff <- sum(abs(betas - betas_new))
-        betas <- betas_new
-        sigma <- sigma_new
-        iter <- iter + 1
-    }
-
-    if (iter == max_iter) {
-        warning("EM algorithm did not converge within the maximum number of iterations.")
-    }
-
-    # Finalize and return the results
-    structure(
-        list(
-            betas = betas,
-            sigma = sigma,
-            log_likelihood = -log_likelihood(betas),
-            iterations = iter
-        ),
-        class = c("ModelAggregator", "list")
+        list(model=agg_lm, sigma=sigma, prediction_names=y_hat_names),
+        class = c("ModelAggregator_lm", "list")
     )
 }
 
 #' @export
-predict.ModelAggregator <- function(obj, y_hat, alpha=0.05, n_trials=1000, ...) {
-    mus <- y_hat %*% obj$beta
-    pred_sd <- predict(obj$calibrator, data.frame(y_hat))
-    pred_sd <- ifelse(pred_sd < 0, obj$sigma, pred_sd)
+predict.ModelAggregator_lm <- function(obj, y_hat, alpha=0.05, n_trials=1000, ...) {
+    colnames(y_hat) <- obj$prediction_names
+    mus <- predict(obj$model, data.frame(y_hat))
+    # pred_sd <- predict(obj$calibrator, data.frame(y_hat))
+    # pred_sd <- ifelse(pred_sd < 0, obj$sigma, pred_sd)
+    pred_sd <- obj$sigma
     predicted_dists <- matrix(
-        rnorm(1000*nrow(y_hat), mean = mus, sd = pred_sd),
+        rnorm(n_trials*nrow(y_hat), mean = mus, sd = pred_sd),
         nrow = nrow(y_hat),
         byrow = FALSE
     )
@@ -153,3 +74,91 @@ predict.ModelAggregator <- function(obj, y_hat, alpha=0.05, n_trials=1000, ...) 
         'pred_sd' = pred_sd
     )
 }
+
+
+
+#' @title Fit Aggregation Function EM
+#' @export
+#' @describeIn fitAggregationFunction Fit a Normal mixture model on the regressors using the EM algorithm
+fitAggregationFunction_EM <- function(Y, y_hat, tol = 1e-4, max_iter = 1000, verbose = FALSE) {
+    # Number of predictors
+    k <- ncol(y_hat)
+
+    # Initialize weights (betas) uniformly
+    betas <- runif(k)
+    betas <- betas / sum(betas)
+
+    # Initialize separate sigmas for each method
+    sigma <- apply(Y - y_hat, 2, sd)
+    iter <- 0
+    diff <- Inf
+    loglik_old <- -Inf
+
+    while (iter < max_iter && diff > tol) {
+        # E-step: Compute responsibilities
+        log_prob_mat <- sapply(1:k, function(j) {
+            dnorm(Y, mean = y_hat[, j], sd = sigma[j], log = TRUE) + log(betas[j])
+        })
+        max_log_prob <- apply(log_prob_mat, 1, max)
+        prob_mat <- exp(log_prob_mat - max_log_prob)
+        sum_prob <- rowSums(prob_mat)
+        prob_mat <- prob_mat / sum_prob
+        loglik <- sum(max_log_prob + log(sum_prob))  # Update log likelihood
+
+        # M-step: Update betas and sigmas
+        betas_new <- colSums(prob_mat) / nrow(y_hat)
+        sigma_new <- sqrt(colSums((Y - y_hat)^2 * prob_mat) / colSums(prob_mat))
+
+        # Check for convergence
+        diff <- abs(loglik - loglik_old)
+        loglik_old <- loglik
+        betas <- betas_new
+        sigma <- sigma_new
+        iter <- iter + 1
+
+        if (verbose) {
+            cat(sprintf("Iteration: %d, Log Likelihood: %.4f, Diff: %.6f\n", iter, loglik, diff))
+        }
+    }
+
+    if (iter == max_iter) {
+        warning("EM algorithm did not converge within the maximum number of iterations.")
+    }
+
+    # Return results
+    structure(
+        list(
+            betas = betas,
+            sigma = sigma,
+            iterations = iter,
+            log_likelihood = loglik
+        ),
+        class = c("ModelAggregator_EM", "list")
+    )
+}
+
+
+#' @export
+predict.ModelAggregator_EM <- function(obj, y_hat, alpha=0.05, n_trials=1000, ...) {
+    w <- obj$betas
+    sigma <- obj$sigma
+
+    # assume the same sample weights and distribution for each variable
+    choices <- sample(1:length(w), n_trials, replace=TRUE, prob=w)
+    predicted_dists <- matrix(
+        rnorm(nrow(y_hat)*n_trials, mean=y_hat[, choices], sd=sigma[choices]),
+        byrow=FALSE,
+        nrow=nrow(y_hat)
+    )
+    pi <- t(apply(predicted_dists, 1, function(preds) {
+        quantile(preds, probs = c(alpha/2, 1 - alpha/2))
+    }))
+    pred_sd <- apply(predicted_dists, 1, sd)
+    cbind(
+        'mean' = rowMeans(predicted_dists),
+        'lower' = pi[, 1],
+        'upper' = pi[, 2],
+        'pred_sd' = pred_sd
+    )
+}
+
