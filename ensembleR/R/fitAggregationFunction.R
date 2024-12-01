@@ -54,7 +54,7 @@ fitAggregationFunction_lm <- function(Y, y_hat, ...) {
 #' @export
 predict.ModelAggregator_lm <- function(obj, y_hat, alpha=0.05, n_trials=1000, ...) {
     mus <- predict(obj$model, y_hat)
-    pred_sd <- predict(obj$calibrator, data.frame(y_hat))
+    # pred_sd <- predict(obj$calibrator, data.frame(y_hat))
     pred_sd <- ifelse(pred_sd < 0, obj$sigma, pred_sd)
     predicted_dists <- matrix(
         rnorm(n_trials*nrow(y_hat), mean = mus, sd = pred_sd),

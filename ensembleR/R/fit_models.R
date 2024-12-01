@@ -61,10 +61,11 @@ fit_models <- function(X, Y, aggregation_method="lm", calibration_method=NULL, .
     ), class="ModelEnsemble")
 }
 
+#' @export
 predict.ModelEnsemble <- function(obj, X, alpha=0.05) {
     # Predict the ensemble
     if (!is.null(obj$char_encoder)) {
-        pred_features <- predict(char_encoder, X)
+        pred_features <- predict(obj$char_encoder, X)
     } else {
         pred_features <- as.matrix(X)
     }
@@ -72,15 +73,16 @@ predict.ModelEnsemble <- function(obj, X, alpha=0.05) {
     # Make predictions for the four models
     lm_pred <- predict(obj$lm_model, data.frame(X))
     rf_pred <- predict(obj$rf_model, data.frame(X))$predictions
-    xgb_pred <- predict(obj$xgb_model, xgboost::xgb.DMatrix(data = as.matrix(X)))
-    svm_pred <- predict(obj$svm_model, as.matrix(X))
+    xgb_pred <- predict(obj$xgb_model, xgboost::xgb.DMatrix(data = as.matrix(pred_features)))
+    svm_pred <- predict(obj$svm_model, as.matrix(pred_features))
 
     # Combine predictions
     y_hat <- cbind(lm_pred, rf_pred, xgb_pred, svm_pred)
 
     # Predict the ensemble
     aggregation <- predict(obj$aggregation_function, y_hat, alpha=alpha)
-    calibrated_estimates <- predict(obj$calibrator, aggregation, y_hat)
+    aggregation
+    # calibrated_estimates <- predict(obj$calibrator, aggregation, y_hat)
 }
 
 

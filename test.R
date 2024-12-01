@@ -21,7 +21,7 @@ rmse <- function(y, y_hat) {
     sqrt(mean((y - y_hat)^2))
 }
 
-modelEnsemble <- fit_models(X, Y, aggregation_method="EM", verbose=TRUE)
+modelEnsemble <- fit_models(X, Y, aggregation_method="EM", verbose=FALSE)
 predict(modelEnsemble, test_df[, -which(names(test_df) == "Age")], alpha=0.05)
 
 
