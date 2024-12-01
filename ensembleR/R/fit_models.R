@@ -62,7 +62,7 @@ fit_models <- function(X, Y, aggregation_method="lm", calibration_method=NULL, .
 }
 
 #' @export
-predict.ModelEnsemble <- function(obj, X, alpha=0.05) {
+predict.ModelEnsemble <- function(obj, X, alpha=0.05, return_components=FALSE) {
     # Predict the ensemble
     if (!is.null(obj$char_encoder)) {
         pred_features <- predict(obj$char_encoder, X)
@@ -82,7 +82,15 @@ predict.ModelEnsemble <- function(obj, X, alpha=0.05) {
     # Predict the ensemble
     aggregation <- predict(obj$aggregation_function, y_hat, alpha=alpha)
     aggregation
-    # calibrated_estimates <- predict(obj$calibrator, aggregation, y_hat)
+
+    if (return_components) {
+        list(
+            "aggregated"=aggregation,
+            "y_hat" = y_hat
+        )
+    } else {
+        aggregation
+    }
 }
 
 

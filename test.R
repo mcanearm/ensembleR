@@ -21,25 +21,23 @@ rmse <- function(y, y_hat) {
     sqrt(mean((y - y_hat)^2))
 }
 
-modelEnsemble <- fit_models(X, Y, aggregation_method="EM", verbose=FALSE)
-predict(modelEnsemble, test_df[, -which(names(test_df) == "Age")], alpha=0.05)
+modelEnsemble_EM <- fit_models(X, Y, aggregation_method="EM", verbose=FALSE)
+modelEnsemble_lm <- fit_models(X, Y, aggregation_method="lm", verbose=FALSE)
 
 
-# modelEnsemble <- fit_models(X, Y, aggregation_method="lm")
+pred_em <- predict(modelEnsemble_EM, test_df[, -which(names(test_df) == "Age")], alpha=0.05, return_components=TRUE)
+pred_lm <- predict(modelEnsemble_lm, test_df[, -which(names(test_df) == "Age")], alpha=0.05, return_components=TRUE)
 
 
-modelEnsemble2$aggregation_function$model
-modelEnsemble$aggregation_function$betas
-
-predict(modelEnsemble, test_df[, -which(names(test_df) == "Age")], alpha=0.05)
-
-
-val_rmse <- apply(val_y_hats, 2, function(y_hat) rmse(val_y_true, y_hat))
+# Thankfuly, this is better!
+# apply($y_hat, 2, function(y_hat) rmse(test_df$Age, y_hat))
+rmse(test_df$Age, predictions$aggregated[, "mean"])
 
 
+# TODO: Analyze the coverage of the prediction intervals.
+# Add the calibration step.
 
-fit2 <- lm(data=fit_df, val_y_true ~ offset(lm) + I(lm-rf) + I(lm-xgb))
-
+# IGNORE PLOTS BELOW HERE FOR NOW, BUT PLEASE DON'T DELETE
 pred_y <- predict(fit2, data.frame(y_hats), interval="prediction", level=0.95)
 rmse(y_true, pred_y[, 1])
 

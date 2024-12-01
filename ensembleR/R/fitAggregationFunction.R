@@ -40,22 +40,25 @@ fitAggregationFunction_lm <- function(Y, y_hat, ...) {
     # to estimate the calibration parameters around:
     # 1. The standard deviation estimates
     # 2. A final "stddev discount" parameter that optimizes for the coverage requested.
+    y_hat_names <- colnames(y_hat)  # required for using the predict method later with LM...
     agg_lm <- lm(Y ~ y_hat, data.frame(Y, y_hat))
     sigma <- sd(agg_lm$residuals)
 
-    calibrator <- ensembleR::fitCalibrator(Y, agg_lm$fitted.values, y_hat)
+    # calibrator <- ensembleR::fitCalibrator(Y, agg_lm$fitted.values, y_hat)
     # TODO: consider modifying the bias term and/or fitting the residuals directly
     structure(
-        list(model=agg_lm, calibrator=calibrator, sigma=sigma),
+        list(model=agg_lm, sigma=sigma, prediction_names=y_hat_names),
         class = c("ModelAggregator_lm", "list")
     )
 }
 
 #' @export
 predict.ModelAggregator_lm <- function(obj, y_hat, alpha=0.05, n_trials=1000, ...) {
-    mus <- predict(obj$model, y_hat)
+    colnames(y_hat) <- obj$prediction_names
+    mus <- predict(obj$model, data.frame(y_hat))
     # pred_sd <- predict(obj$calibrator, data.frame(y_hat))
-    pred_sd <- ifelse(pred_sd < 0, obj$sigma, pred_sd)
+    # pred_sd <- ifelse(pred_sd < 0, obj$sigma, pred_sd)
+    pred_sd <- obj$sigma
     predicted_dists <- matrix(
         rnorm(n_trials*nrow(y_hat), mean = mus, sd = pred_sd),
         nrow = nrow(y_hat),
