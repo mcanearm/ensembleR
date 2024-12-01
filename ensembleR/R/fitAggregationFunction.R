@@ -33,35 +33,20 @@ fitAggregationFunction <- function(y_hat, Y, method="EM", ...) {
 }
 
 
-#' @title Fit Aggregation function by Numerical optimization
-#' @describeIn fitAggregationFunction Fit a Normal mixture model on the data using numerical optimization
+#' @title Fit Aggregation function by simple LM fit
+#' @describeIn fitAggregationFunction Fit a standard linear model to the data for aggregation.
 fitAggregationFunction_optim <- function(y_hat, Y, ...) {
     # TODO: Instead of calibrating based on a single validation set, use cross validation
     # to estimate the calibration parameters around:
     # 1. The standard deviation estimates
     # 2. A final "stddev discount" parameter that optimizes for the coverage requested.
-    # Compile and run the STAN model
-    cov_mat <- cov(Y - y_hat)
+    agg_lm <- lm(Y ~ y_hat, data.frame(Y, y_hat))
+    sigma <- sd(agg_lm$residuals)
 
-    ll <- ll_partial(Y, y_hat)
-
-    initial <- rep(1 / ncol(y_hat), ncol(y_hat) - 1)
-    optimal_beta <- optim(
-        initial,
-        ll,
-        method = "L-BFGS-B",
-        lower = rep(0, ncol(y_hat)),
-        upper = rep(1, ncol(y_hat)),
-        ...
-    )
-    beta <- c(optimal_beta$par, 1 - sum(optimal_beta$par))
-    sigma <- sqrt(beta %*% cov_mat %*% beta)[1]
-
-    calibrator <- ensembleR::fitCalibrator(Y, y_hat %*% beta, y_hat)
+    calibrator <- ensembleR::fitCalibrator(Y, agg_lm$fitted.values, y_hat)
     # TODO: consider modifying the bias term and/or fitting the residuals directly
-
     structure(
-        list(optim_results=optimal_beta, sigma=sigma, beta=beta, calibrator=calibrator),
+        list(model=agg_lm, calibrator=calibrator, sigma=sigma),
         class = c("ModelAggregator", "list")
     )
 
@@ -140,11 +125,11 @@ fitAggregationFunction_EM <- function(y_hat, Y, tol = 1e-6, max_iter = 1000, ver
 
 #' @export
 predict.ModelAggregator <- function(obj, y_hat, alpha=0.05, n_trials=1000, ...) {
-    mus <- y_hat %*% obj$beta
+    mus <- predict(obj$model, y_hat)
     pred_sd <- predict(obj$calibrator, data.frame(y_hat))
     pred_sd <- ifelse(pred_sd < 0, obj$sigma, pred_sd)
     predicted_dists <- matrix(
-        rnorm(1000*nrow(y_hat), mean = mus, sd = pred_sd),
+        rnorm(n_trials*nrow(y_hat), mean = mus, sd = pred_sd),
         nrow = nrow(y_hat),
         byrow = FALSE
     )
