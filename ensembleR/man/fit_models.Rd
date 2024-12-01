@@ -4,14 +4,8 @@
 \alias{fit_models}
 \title{Fit models}
 \usage{
-fit_models(X, y, ...)
+fit_models(X, Y, ...)
 }
 \description{
-Fit models
+` Fit all the models + the aggregation function
 }
-\section{Functions}{
-\itemize{
-\item \code{fit_models()}: the specified models
-TODO: ADD MORE DOCUMENTATION HERE
-
-}}

@@ -43,10 +43,12 @@ fitAggregationFunction_optim <- function(y_hat, Y, ...) {
     # Compile and run the STAN model
     cov_mat <- cov(Y - y_hat)
 
+    ll <- ll_partial(Y, y_hat)
+
     initial <- rep(1 / ncol(y_hat), ncol(y_hat) - 1)
     optimal_beta <- optim(
         initial,
-        log_likelihood,
+        ll,
         method = "L-BFGS-B",
         lower = rep(0, ncol(y_hat)),
         upper = rep(1, ncol(y_hat)),
@@ -65,28 +67,26 @@ fitAggregationFunction_optim <- function(y_hat, Y, ...) {
 
 }
 
-
-log_likelihood <- function(beta_vect) {
-    y_hat_mu <- y_hat %*% beta_vect
-    sigma <- sqrt(mean((Y - y_hat_mu)^2))
-    -sum(dnorm(Y, mean = y_hat_mu, sd = sigma, log = TRUE))
-}
-
-
 #' @title Log Likelihood function
 #'
 #' @description Log likelihood method for both numerical optimization and EM
 #' algorithm approaches to finding the optimal mixture.
-ll<- function(beta_vect) {
-    y_hat_mu <- y_hat %*% beta_vect
-    sigma <- sqrt(mean((Y - y_hat_mu)^2))
-    -sum(dnorm(Y, mean = y_hat_mu, sd = sigma, log = TRUE))
+ll_partial <- function(Y, y_hat) {
+    ll_func <- function(beta_vect) {
+        y_hat_mu <- y_hat %*% beta_vect
+        sigma <- sqrt(mean((Y - y_hat_mu)^2))
+        -sum(dnorm(Y, mean = y_hat_mu, sd = sigma, log = TRUE))
+    }
+    ll_func
 }
 
 
-#' @title Fit aggregation function by EM
-#' @describeIn fitAggregationFunction Fit a Normal mixture model on the data using the EM algorithm
-fitAggregationFunction_EM<- function(y_hat, Y, tol = 1e-6, max_iter = 1000) {
+#' @title Fit Aggregation Function EM
+#' @export
+#' @describeIn fitAggregationFunction Fit a Normal mixture model on the regressors using the EM algorithm
+fitAggregationFunction_EM <- function(y_hat, Y, tol = 1e-6, max_iter = 1000, verbose = FALSE) {
+    # Number of predictors
+    k <- ncol(y_hat)
 
     # Initialize weights (betas) uniformly
     betas <- rep(1 / k, k)
@@ -99,11 +99,12 @@ fitAggregationFunction_EM<- function(y_hat, Y, tol = 1e-6, max_iter = 1000) {
     while (iter < max_iter && diff > tol) {
         # E-step: Compute responsibilities
         y_hat_mu <- y_hat %*% betas
-        responsibilities <- sapply(1:k, function(j) {
+        likelihoods <- sapply(1:k, function(j) {
             beta_temp <- rep(0, k)
             beta_temp[j] <- 1
-            exp(-log_likelihood(beta_temp))
+            dnorm(Y, mean = y_hat %*% beta_temp, sd = sigma, log = TRUE)
         })
+        responsibilities <- exp(likelihoods - rowMeans(likelihoods))
         responsibilities <- responsibilities / rowSums(responsibilities)
 
         # M-step: Update betas
@@ -115,6 +116,10 @@ fitAggregationFunction_EM<- function(y_hat, Y, tol = 1e-6, max_iter = 1000) {
         betas <- betas_new
         sigma <- sigma_new
         iter <- iter + 1
+
+        if (verbose) {
+            cat(sprintf("Iteration: %d, Log Likelihood: %.4f, Diff: %.6f\n", iter, -sum(likelihoods), diff))
+        }
     }
 
     if (iter == max_iter) {
@@ -126,10 +131,10 @@ fitAggregationFunction_EM<- function(y_hat, Y, tol = 1e-6, max_iter = 1000) {
         list(
             betas = betas,
             sigma = sigma,
-            log_likelihood = -log_likelihood(betas),
-            iterations = iter
+            iterations = iter,
+            log_likelihood = -sum(likelihoods)
         ),
-        class = c("ModelAggregator", "list")
+        class = c("AggregationFunction", "list")
     )
 }
 

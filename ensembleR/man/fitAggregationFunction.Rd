@@ -10,7 +10,13 @@ fitAggregationFunction(y_hat, Y, method = "EM", ...)
 
 fitAggregationFunction_optim(y_hat, Y, ...)
 
-fitAggregationFunction_EM(y_hat, Y, tol = 1e-06, max_iter = 1000)
+fitAggregationFunction_EM(
+  y_hat,
+  Y,
+  tol = 1e-06,
+  max_iter = 1000,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{y_hat}{The predictions output from a model. Note that this is passed as an $NxK$ matrix, where $K$ is the number of predictors.}
@@ -28,7 +34,7 @@ for each method.
 \itemize{
 \item \code{fitAggregationFunction_optim()}: Fit a Normal mixture model on the data using numerical optimization
 
-\item \code{fitAggregationFunction_EM()}: Fit a Normal mixture model on the data using the EM algorithm
+\item \code{fitAggregationFunction_EM()}: Fit a Normal mixture model on the regressors using the EM algorithm
 
 }}
 \examples{
