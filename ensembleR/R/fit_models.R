@@ -44,7 +44,7 @@ fit_models <- function(X, Y, ...) {
     aggregation_function <- ensembleR::fitAggregationFunction(y_hat, val_Y, ...)
 
     # Return all fitted models and the aggregation function
-    list(
+    structure(list(
         lm_model = lm_fit,
         rf_model = rf_fit,
         xgb_model = xgb_fit,
@@ -53,7 +53,7 @@ fit_models <- function(X, Y, ...) {
         aggregation_function = aggregation_function,
         y_hat=y_hat,
         val_Y=val_Y
-    )
+    ), class="ModelEnsemble")
 }
 
 

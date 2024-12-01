@@ -22,7 +22,7 @@ rmse <- function(y, y_hat) {
 }
 
 
-modelEnsemble <- fit_models(X, Y, method="optim")
+modelEnsemble <- fit_models(X, Y, method="lm")
 
 predict(modelEnsemble, test_df[, -which(names(test_df) == "Age")], alpha=0.05)
 

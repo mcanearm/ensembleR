@@ -25,7 +25,7 @@
 fitAggregationFunction <- function(y_hat, Y, method="EM", ...) {
     if (method == "EM") {
         fitAggregationFunction_EM(y_hat, Y, ...)
-    } else if (method == "optim") {
+    } else if (method == "lm") {
         fitAggregationFunction_optim(y_hat, Y, ...)
     } else {
         stop("Method must be either 'EM' or 'optim'")
@@ -35,7 +35,7 @@ fitAggregationFunction <- function(y_hat, Y, method="EM", ...) {
 
 #' @title Fit Aggregation function by simple LM fit
 #' @describeIn fitAggregationFunction Fit a standard linear model to the data for aggregation.
-fitAggregationFunction_optim <- function(y_hat, Y, ...) {
+fitAggregationFunction_lm <- function(y_hat, Y, ...) {
     # TODO: Instead of calibrating based on a single validation set, use cross validation
     # to estimate the calibration parameters around:
     # 1. The standard deviation estimates
