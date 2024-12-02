@@ -31,24 +31,8 @@ pred_lm <- predict(modelEnsemble_lm, test_df[, -which(names(test_df) == "Age")],
 
 # Thankfuly, this is better!
 # apply($y_hat, 2, function(y_hat) rmse(test_df$Age, y_hat))
-rmse(test_df$Age, predictions$aggregated[, "mean"])
-
-
-# TODO: Analyze the coverage of the prediction intervals.
-# Add the calibration step.
-
-# IGNORE PLOTS BELOW HERE FOR NOW, BUT PLEASE DON'T DELETE
-pred_y <- predict(fit2, data.frame(y_hats), interval="prediction", level=0.95)
-rmse(y_true, pred_y[, 1])
-
-alphas <- c(0.025, 0.05, 0.10)
-conf_int_coverage <- lapply(alphas, function(alpha) {
-    predictions <- cbind(predict(aggregator, y_hats, alpha=alpha), y_true)
-    replicate(100, {
-        sample_preds <- predictions[sample(1:nrow(predictions), nrow(predictions), replace=TRUE), ]
-        mean(sample_preds[, 5] > sample_preds[, 2] & sample_preds[, 5] < sample_preds[, 3])
-    })
-})
+rmse(test_df$Age, pred_em$aggregated[, "mean"])
+rmse(test_df$Age, pred_lm$aggregated[, "mean"])
 
 par(mfrow=c(1, 3))
 for (i in 1:length(conf_int_coverage)) {

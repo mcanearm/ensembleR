@@ -34,45 +34,41 @@ fitAggregationFunction <- function(Y, y_hat, method="EM", ...) {
 
 
 #' @title Fit Aggregation function by simple LM fit
+#' @export
 #' @describeIn fitAggregationFunction Fit a standard linear model to the data for aggregation.
 fitAggregationFunction_lm <- function(Y, y_hat, ...) {
     # TODO: Instead of calibrating based on a single validation set, use cross validation
     # to estimate the calibration parameters around:
     # 1. The standard deviation estimates
     # 2. A final "stddev discount" parameter that optimizes for the coverage requested.
-    y_hat_names <- colnames(y_hat)  # required for using the predict method later with LM...
-    agg_lm <- lm(Y ~ y_hat, data.frame(Y, y_hat))
-    sigma <- sd(agg_lm$residuals)
+    agg_lm <- lm(Y ~ ., data=cbind.data.frame(Y, y_hat))
 
     # calibrator <- ensembleR::fitCalibrator(Y, agg_lm$fitted.values, y_hat)
     # TODO: consider modifying the bias term and/or fitting the residuals directly
     structure(
-        list(model=agg_lm, sigma=sigma, prediction_names=y_hat_names),
+        list(model=agg_lm, sigma=agg_lm$residual_scale),
         class = c("ModelAggregator_lm", "list")
     )
 }
 
 #' @export
-predict.ModelAggregator_lm <- function(obj, y_hat, alpha=0.05, n_trials=1000, ...) {
-    colnames(y_hat) <- obj$prediction_names
-    mus <- predict(obj$model, data.frame(y_hat))
-    # pred_sd <- predict(obj$calibrator, data.frame(y_hat))
-    # pred_sd <- ifelse(pred_sd < 0, obj$sigma, pred_sd)
-    pred_sd <- obj$sigma
-    predicted_dists <- matrix(
-        rnorm(n_trials*nrow(y_hat), mean = mus, sd = pred_sd),
-        nrow = nrow(y_hat),
-        byrow = FALSE
+#' @describeIn fitAggregationFunction predict method for the LM aggregation function
+predict.ModelAggregator_lm <- function(obj, y_hat, alpha = 0.05, ...) {
+    colnames(y_hat) <- names(obj$model$coefficients)[2:length(obj$model$coefficients)]
+    interval_preds <- predict(
+        obj$model,
+        as.data.frame(y_hat),
+        se.fit = TRUE,
+        interval = "prediction",
+        level = alpha
     )
-    pi <- t(apply(predicted_dists, 1, function(preds) {
-        quantile(preds, probs = c(alpha/2, 1 - alpha/2))
-    }))
-    cbind(
-        'mean' = rowMeans(predicted_dists),
-        'lower' = pi[, 1],
-        'upper' = pi[, 2],
-        'pred_sd' = pred_sd
+    out <- cbind(
+        interval_preds$fit,
+        std = interval_preds$se.fit + interval_preds$residual.scale
     )
+    colnames(out) <- c("mean", "lower", "upper", "sd")
+
+    out
 }
 
 
@@ -158,7 +154,7 @@ predict.ModelAggregator_EM <- function(obj, y_hat, alpha=0.05, n_trials=1000, ..
         'mean' = rowMeans(predicted_dists),
         'lower' = pi[, 1],
         'upper' = pi[, 2],
-        'pred_sd' = pred_sd
+        'sd' = pred_sd
     )
 }
 

@@ -3,12 +3,15 @@
 \name{fitAggregationFunction}
 \alias{fitAggregationFunction}
 \alias{fitAggregationFunction_lm}
+\alias{predict.ModelAggregator_lm}
 \alias{fitAggregationFunction_EM}
 \title{Fit a Normal mixture model on the data}
 \usage{
 fitAggregationFunction(Y, y_hat, method = "EM", ...)
 
 fitAggregationFunction_lm(Y, y_hat, ...)
+
+\method{predict}{ModelAggregator_lm}(obj, y_hat, alpha = 0.05, ...)
 
 fitAggregationFunction_EM(
   Y,
@@ -33,6 +36,8 @@ for each method.
 \section{Functions}{
 \itemize{
 \item \code{fitAggregationFunction_lm()}: Fit a standard linear model to the data for aggregation.
+
+\item \code{predict(ModelAggregator_lm)}: predict method for the LM aggregation function
 
 \item \code{fitAggregationFunction_EM()}: Fit a Normal mixture model on the regressors using the EM algorithm
 

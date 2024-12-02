@@ -73,15 +73,15 @@ predict.ModelEnsemble <- function(obj, X, alpha=0.05, return_components=FALSE) {
     # Make predictions for the four models
     lm_pred <- predict(obj$lm_model, data.frame(X))
     rf_pred <- predict(obj$rf_model, data.frame(X))$predictions
-    xgb_pred <- predict(obj$xgb_model, xgboost::xgb.DMatrix(data = as.matrix(pred_features)))
-    svm_pred <- predict(obj$svm_model, as.matrix(pred_features))
+    xgb_pred <- predict(obj$xgb_model, xgboost::xgb.DMatrix(data = pred_features))
+    svm_pred <- predict(obj$svm_model, pred_features)
 
     # Combine predictions
     y_hat <- cbind(lm_pred, rf_pred, xgb_pred, svm_pred)
+    rownames(y_hat) <- NULL
 
     # Predict the ensemble
     aggregation <- predict(obj$aggregation_function, y_hat, alpha=alpha)
-    aggregation
 
     if (return_components) {
         list(
