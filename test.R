@@ -22,42 +22,43 @@ rmse <- function(y, y_hat) {
 }
 
 modelEnsemble_EM <- fit_models(X, Y, aggregation_method="EM", verbose=FALSE)
-modelEnsemble_lm <- fit_models(X, Y, aggregation_method="lm", verbose=FALSE)
+modelEnsemble_lm <- fit_models(X, Y, aggregation_method="LM", verbose=FALSE)
+modelEnsemble_bootLM <- fit_models(X, Y, aggregation_method="bootLM", verbose=FALSE)
 
 
-pred_em <- predict(modelEnsemble_EM, test_df[, -which(names(test_df) == "Age")], alpha=0.05, return_components=TRUE)
-pred_lm <- predict(modelEnsemble_lm, test_df[, -which(names(test_df) == "Age")], alpha=0.05, return_components=TRUE)
+# pred_em <- predict(modelEnsemble_EM, test_df[, -which(names(test_df) == "Age")], alpha=0.05, return_components=TRUE)
+test_X <- test_df[, -which(names(test_df) == "Age")]
+test_Y <- test_df$Age
+
+
+# get the predictions
+pred_lm <- predict(modelEnsemble_lm, test_X, alpha=0.05, return_components=TRUE)
+predictions <- predict(modelEnsemble_bootLM, test_X)
+predEM <- predict(modelEnsemble_EM, test_X)
 
 
 # Thankfuly, this is better!
 # apply($y_hat, 2, function(y_hat) rmse(test_df$Age, y_hat))
-rmse(test_df$Age, predictions$aggregated[, "mean"])
+rmse(test_df$Age, predictions[, "mean"])
+rmse(test_df$Age, pred_lm$aggregated[, "mean"])
+rmse(test_df$Age, predEM[, "mean"])
 
 
 # TODO: Analyze the coverage of the prediction intervals.
 # Add the calibration step.
 
 # IGNORE PLOTS BELOW HERE FOR NOW, BUT PLEASE DON'T DELETE
-pred_y <- predict(fit2, data.frame(y_hats), interval="prediction", level=0.95)
-rmse(y_true, pred_y[, 1])
+alphas <- c(0.01, 0.05, 0.10)
 
-alphas <- c(0.025, 0.05, 0.10)
-conf_int_coverage <- lapply(alphas, function(alpha) {
-    predictions <- cbind(predict(aggregator, y_hats, alpha=alpha), y_true)
-    replicate(100, {
-        sample_preds <- predictions[sample(1:nrow(predictions), nrow(predictions), replace=TRUE), ]
-        mean(sample_preds[, 5] > sample_preds[, 2] & sample_preds[, 5] < sample_preds[, 3])
-    })
-})
+pred_boot <- predict(modelEnsemble_bootLM, test_X, alpha=0.05)
+mean(predictions[, "lower"] <= test_Y & predictions[, "upper"] >= test_Y)
 
-par(mfrow=c(1, 3))
+
+
+
+
 for (i in 1:length(conf_int_coverage)) {
     target_alpha <- alphas[i]
-    hist(conf_int_coverage[[i]], main=sprintf("CI=%i%%", 100*(1-target_alpha*2)), xlab="Coverage",
-         xlim = c(
-             min(1-2*target_alpha, min(conf_int_coverage[[i]])),
-             max(conf_int_coverage[[i]])),
-    cex.lab=1.5, cex.axis=1.5, cex.main=1.5)
     abline(v=1-2*target_alpha, col="red")
 }
 
