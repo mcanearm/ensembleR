@@ -22,28 +22,50 @@ rmse <- function(y, y_hat) {
 }
 
 modelEnsemble_EM <- fit_models(X, Y, aggregation_method="EM", verbose=FALSE)
-modelEnsemble_lm <- fit_models(X, Y, aggregation_method="lm", verbose=FALSE)
+modelEnsemble_lm <- fit_models(X, Y, aggregation_method="lm", verbose=FALSE, calibrate_sd=TRUE)
 
 
-pred_em <- predict(modelEnsemble_EM, test_df[, -which(names(test_df) == "Age")], alpha=0.05, return_components=TRUE)
-pred_lm <- predict(modelEnsemble_lm, test_df[, -which(names(test_df) == "Age")], alpha=0.05, return_components=TRUE)
+test_X <- test_df[, -which(names(test_df) == "Age")]
+test_Y <- test_df[, "Age"]
 
+# pred_em <- predict(modelEnsemble_EM, test_X, alpha=0.05, return_components=TRUE)
+pred_lm <- predict(modelEnsemble_lm, test_X, alpha=0.05, return_components=TRUE)
 
 # Thankfuly, this is better!
 # apply($y_hat, 2, function(y_hat) rmse(test_df$Age, y_hat))
-rmse(test_df$Age, pred_em$aggregated[, "mean"])
+# rmse(test_df$Age, pred_em$aggregated[, "mean"])
 rmse(test_df$Age, pred_lm$aggregated[, "mean"])
 
-par(mfrow=c(1, 3))
-for (i in 1:length(conf_int_coverage)) {
+apply(pred_lm$y_hat, 2, function(col) rmse(test_df$Age, col))
+i <- 2
+
+# terrible coverage with base methods
+par(mfrow=c(1, 1))
+alphas <- c(0.01, 0.05, 0.10)
+for (i in 1:length(alphas)) {
     target_alpha <- alphas[i]
-    hist(conf_int_coverage[[i]], main=sprintf("CI=%i%%", 100*(1-target_alpha*2)), xlab="Coverage",
-         xlim = c(
-             min(1-2*target_alpha, min(conf_int_coverage[[i]])),
-             max(conf_int_coverage[[i]])),
+    lm_preds <- predict(modelEnsemble_lm, test_X, alpha=target_alpha)
+    bootstrapped_cov_estimate <- replicate(1000, expr = {
+        idx <- sample(1:nrow(lm_preds), replace=TRUE, size = nrow(lm_preds))
+        pred_sample <- lm_preds[idx,]
+        test_sample <- test_Y[idx]
+        mean(lm_preds[, "lower"] <= test_sample & lm_preds[, "upper"] >= test_sample)
+    })
+    hist(bootstrapped_cov_estimate, main=sprintf("CI=%i%%", 100*(1-target_alpha)), xlab="Coverage",
     cex.lab=1.5, cex.axis=1.5, cex.main=1.5)
-    abline(v=1-2*target_alpha, col="red")
+    abline(v=1-target_alpha, col="red")
 }
+
+calibrator <- fitCalibrator(
+    modelEnsemble_lm$val_Y,
+    modelEnsemble_lm$aggregation_function$model$fitted.values,
+    modelEnsemble_lm$y_hat
+)
+predict(calibrator, )
+
+?fitCalibrator
+fitCalibrator(pred_em$y_hat, pred_em$aggregated[, "mean"], test_Y)
+
 
 
 # TODO: add comparison of interval length

@@ -1,7 +1,7 @@
 #' @title Fit models
 #' @export
 #' @description` Fit all the models + the aggregation function
-fit_models <- function(X, Y, aggregation_method="lm", calibration_method=NULL, ...) {
+fit_models <- function(X, Y, aggregation_method="lm", ...) {
     # Split the data into training and validation sets
     train_idx <- sample(1:nrow(X), 0.8 * nrow(X))
     train_X <- X[train_idx, ]

@@ -2,17 +2,12 @@
 % Please edit documentation in R/error_calibration.R
 \name{fitCalibrator}
 \alias{fitCalibrator}
-\title{SD Estimator based on Aggregator}
+\title{Calibrate SD Estimates}
 \usage{
-fitCalibrator(
-  y_true,
-  aggregated_preds,
-  y_hat,
-  sigma_est,
-  n_smoother = 100,
-  ...
-)
+fitCalibrator(y_true, aggregated_preds, y_hat, sigma_est, n_smoother = 25, ...)
 }
 \description{
-SD Estimator based on Aggregator
+Take the outputs of the aggregator and using this as a mean, fit
+the predicted standard deviation of the residuals.
+TODO: EXPAND
 }

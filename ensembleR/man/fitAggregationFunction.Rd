@@ -9,7 +9,7 @@
 \usage{
 fitAggregationFunction(Y, y_hat, method = "EM", ...)
 
-fitAggregationFunction_lm(Y, y_hat, ...)
+fitAggregationFunction_lm(Y, y_hat, calibrate_sd = TRUE, ...)
 
 \method{predict}{ModelAggregator_lm}(obj, y_hat, alpha = 0.05, ...)
 
