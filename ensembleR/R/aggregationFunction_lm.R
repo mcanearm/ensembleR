@@ -32,7 +32,7 @@ predict.ModelAggregator_lm <- function(obj, y_hat, alpha = 0.05, ...) {
         pred_sd <- predict(obj$sd_model, y_hat)
         pred_sd <- ifelse(pred_sd < 0, obj$model$residual.scale, pred_sd)
     } else {
-        pred_sd <- obj$model$residual.scale
+        pred_sd <- sd(obj$model$residuals)
     }
     interval_preds <- predict(
         obj$model,

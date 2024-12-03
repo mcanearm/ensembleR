@@ -1,9 +1,9 @@
 #' @title Fit models
 #' @export
 #' @description` Fit all the models + the aggregation function
-fit_models <- function(X, Y, aggregation_method="lm", calibration_method=NULL, ...) {
+fit_models <- function(X, Y, aggregation_method=NULL, calibration_method=NULL, validation_pct=0.2, ...) {
     # Split the data into training and validation sets
-    train_idx <- sample(1:nrow(X), 0.8 * nrow(X))
+    train_idx <- sample(1:nrow(X), (1-validation_pct) * nrow(X))
     train_X <- X[train_idx, ]
     val_X <- X[-train_idx, ]
     train_Y <- Y[train_idx]
@@ -15,7 +15,8 @@ fit_models <- function(X, Y, aggregation_method="lm", calibration_method=NULL, .
         fit_features <- predict(char_encoder, train_X)
         val_features <- predict(char_encoder, val_X)
     } else {
-        fit_features <- as.matrix(X)
+        fit_features <- as.matrix(train_X)
+        val_features <- as.matrix(val_X)
     }
 
     # 1. Linear Regression Model
@@ -41,11 +42,13 @@ fit_models <- function(X, Y, aggregation_method="lm", calibration_method=NULL, .
     y_hat <- cbind(lm_pred, rf_pred, xgb_pred, svm_pred)
 
     # Use EM algorithm to find the optimal weights
-    aggregation_function <- ensembleR::fitAggregationFunction(val_Y, y_hat, method=aggregation_method, ...)
-    aggregated_predictions <- predict(aggregation_function, y_hat)
-
-    # Now fit the calibration function to ensure proper coverage
-    # calibration_method <- ensembleR::fitCalibrationFunction(val_y, aggregated_predictions, y_hat, method=calibration_method, ...)
+    if (!is.null(aggregation_method)) {
+        aggregation_function <- ensembleR::fitAggregationFunction(val_Y, y_hat, method=aggregation_method, ...)
+        aggregated_predictions <- predict(aggregation_function, y_hat)
+    } else {
+        aggregated_predictions <- NULL
+        aggregation_function <- NULL
+    }
 
     # Return all fitted models and the aggregation function
     structure(list(
@@ -55,7 +58,6 @@ fit_models <- function(X, Y, aggregation_method="lm", calibration_method=NULL, .
         svm_model = svm_fit,
         char_encoder = char_encoder,
         aggregation_function = aggregation_function,
-        # calibrator = calibration_method,
         y_hat=y_hat,
         val_Y=val_Y
     ), class="ModelEnsemble")
@@ -80,14 +82,19 @@ predict.ModelEnsemble <- function(obj, X, alpha=0.05, return_components=FALSE) {
     y_hat <- cbind(lm_pred, rf_pred, xgb_pred, svm_pred)
 
     # Predict the ensemble
-    aggregation <- predict(obj$aggregation_function, y_hat, alpha=alpha)
-    aggregation
+    if (!is.null(obj$aggregation_function)) {
+        aggregation <- predict(obj$aggregation_function, y_hat, alpha=alpha)
+    } else {
+        aggregation <- NULL
+    }
 
     if (return_components) {
         list(
             "aggregated"=aggregation,
             "y_hat" = y_hat
         )
+    } else if (is.null(aggregation)) {
+        y_hat
     } else {
         aggregation
     }

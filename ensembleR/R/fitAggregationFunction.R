@@ -29,8 +29,10 @@ fitAggregationFunction <- function(Y, y_hat, method="EM", ...) {
         fitAggregationFunction_lm(Y, y_hat, ...)
     } else if (method == "bootLM") {
         fitAggregationFunction_bootLM(Y, y_hat, ...)
-    } else {
-        stop("Method must one of 'EM', 'LM', or 'bootLM'")
+    } else if (method == "quantile") {
+        fitAggregationFunction_quantile(Y, y_hat, ...)
+    }else {
+        stop("Method must one of 'EM', 'LM', 'bootLM', 'quantile'")
     }
 }
 

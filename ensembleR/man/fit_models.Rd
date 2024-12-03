@@ -4,7 +4,14 @@
 \alias{fit_models}
 \title{Fit models}
 \usage{
-fit_models(X, Y, aggregation_method = "lm", calibration_method = NULL, ...)
+fit_models(
+  X,
+  Y,
+  aggregation_method = NULL,
+  calibration_method = NULL,
+  validation_pct = 0.2,
+  ...
+)
 }
 \description{
 ` Fit all the models + the aggregation function

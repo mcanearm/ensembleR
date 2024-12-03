@@ -14,6 +14,7 @@ fitAggregationFunction_bootLM <- function(Y, y_hat, boot_iter=1000, ...) {
     }, simplify = TRUE)
 
     val_preds <- x %*% beta_mat
+    val_resid <- Y - val_preds
 
     # loop hiding, but ok
     resid_scale <- apply(Y - val_preds, 2, sd)
