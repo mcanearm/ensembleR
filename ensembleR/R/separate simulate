@@ -1,0 +1,63 @@
+install.packages('ranger')
+install.packages("e1071")
+install.packages("xgboost")
+library(e1071)          # SVM
+library(xgboost)        # XGBoost
+library(ranger)         # Random Forest
+
+#sample 
+set.seed(123)
+n <- 10000  # sample numbers
+p <- 50   
+
+##simulation dataset
+X <- matrix(rnorm(n * p), nrow = n, ncol = p)  # matrix
+beta_weights <- runif(p, -1, 1)                # weight
+Y <- X %*% beta_weights + rnorm(n, sd = 5)    # y
+
+####data set
+train_idx <- sample(1:n, 0.8 * n)  # 80% training
+train_X <- X[train_idx, ]
+train_Y <- Y[train_idx]
+val_X <- X[-train_idx, ]
+val_Y <- Y[-train_idx]
+####sample(1:n, 0.8 * n)：random 0.8 datset training
+####X[train_idx, ]：training 
+##Y[train_idx]：match x
+#####X[-train_idx, ]：20%###
+#####Y[-train_idx]：0.2 Y###
+
+###svm
+svm_model <- svm(x = train_X, y = train_Y, type = "eps-regression", kernel = "radial", cost = 1)
+svm_pred <- predict(svm_model, val_X)
+
+
+###rf
+rf_model <- ranger(train_Y ~ ., data = data.frame(train_X, train_Y), num.trees = 256)
+rf_pred <- predict(rf_model, data.frame(val_X))$predictions
+
+###xgboost
+dtrain <- xgb.DMatrix(data = train_X, label = train_Y)
+xgb_model <- xgboost(data = dtrain, objective = "reg:squarederror", nrounds = 100, verbose = 0)
+xgb_pred <- predict(xgb_model, xgb.DMatrix(data = val_X))
+
+##use fitAggregationFunction
+y_hat <- cbind(svm_pred, rf_pred, xgb_pred)  ####?
+agg_model <- fitAggregationFunction(val_Y, y_hat, method = "EM", verbose = TRUE)
+
+aggregated_predictions <- predict(agg_model, y_hat, alpha = 0.05)
+mse <- function(y_true, y_pred) {
+  mean((y_true - y_pred)^2)
+}
+
+##analysiss
+mse_svm <- mse(val_Y, svm_pred)
+mse_rf <- mse(val_Y, rf_pred)
+mse_xgb <- mse(val_Y, xgb_pred)
+mse_aggregated <- mse(val_Y, aggregated_predictions[, "mean"])
+
+###plot
+plot(val_Y, aggregated_predictions[, "mean"], main = "Aggregated Model vs True Values",
+     xlab = "True Values", ylab = "Predicted Values", pch = 20, col = "blue")
+abline(a = 0, b = 1, col = "red", lwd = 2)
+
