@@ -9,6 +9,15 @@ fit_char_encoder(X)
 
 \method{predict}{char_encoder}(object, X, ...)
 }
+\arguments{
+\item{X}{The covariate features. Expects a data.frame format, since the
+function is searching for character columns.}
+
+\item{object}{A char_encoder object, consistent with the predict interface.}
+
+\item{...}{Unused ellipsis argument. Added for consistency with `predict`
+interface.}
+}
 \description{
 This is a thin wrapper around the \link[caret]{dummyVars} function that
 fits a one-hot encoder to a dataset. Here, we assume that any character

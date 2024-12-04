@@ -1,4 +1,4 @@
-#' @title Fit a Normal mixture model on the data
+#' @title Fit Aggregation Function
 #' @export
 #' @description High level general interface for fitting aggregations of regressor
 #' variables into a single output prediction. The individual logic of aggregation
@@ -8,10 +8,12 @@
 #'
 #' To add a new method, one should create a new file and define both the fitting
 #' method and the prediction method. The fit method should output a unique S3 class
-#' name, and by convention it should be `ModelAggregator_{method}`.
+#' name, and by convention it should be `ModelAggregator_\{my_method\}`.
 #' @param Y The true Y values for fitting
 #' @param y_hat The predictions output from a model. Note that this is passed
 #' as an \eqn{N \times K} matrix, where \eqn{K} is the number of predictors.
+#' @param method A string indicating which method of aggregation to use.
+#' Available methods are `EM`, `LM`, `bootLM`, and `quantile`.
 #' @param ... Additional arguments to pass to the individual aggregation fitting methods. Each has their own
 #' set of parameters for customizing the aggregation process according to the methodology
 #' in the model.

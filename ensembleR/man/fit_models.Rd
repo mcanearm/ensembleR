@@ -2,17 +2,54 @@
 % Please edit documentation in R/fit_models.R
 \name{fit_models}
 \alias{fit_models}
+\alias{predict.ModelEnsemble}
 \title{Fit models}
 \usage{
-fit_models(
-  X,
-  Y,
-  aggregation_method = NULL,
-  calibration_method = NULL,
-  validation_pct = 0.2,
-  ...
-)
+fit_models(X, Y, aggregation_method = NULL, validation_pct = 0.2, ...)
+
+\method{predict}{ModelEnsemble}(object, X, return_components = FALSE, ...)
+}
+\arguments{
+\item{X}{A dataframe of covariates/explanatory variables. Strictly speaking,
+it can be a matrix, but it is assumed to be a dataframe so that categorical
+variables are handled effectively.}
+
+\item{Y}{A numeric vector for the response}
+
+\item{aggregation_method}{A string indicating the method to use for
+aggregation.}
+
+\item{validation_pct}{The percentage of the training data to hold apart
+for usage in fitting the aggregation method.}
+
+\item{...}{Arbitrary arguments to be passed to the fitted aggregation
+function. These arguments do not apply and are unused if the aggregation
+function is not fitted.}
+
+\item{object}{A fitted ModelEnsemble object}
+
+\item{return_components}{A logical indicating whether to return the individual
+method predictions alongside the aggregation. Only relevant if the
+aggregation function is fitted. If it is not fitted, then this argument
+has no effect.}
+}
+\value{
+If no aggregation method is present in the `object`, a dataframe
+is returned containined the output all four methods. If an aggregation
+method is fitted, the results of the aggregation are returned, namely a
+dataframe consisting of the mean, lower and upper bounds of a prediction
+interval, and the predicted standard deviation for a particular value. See
+\link[ensembleR]{fitAggregationFunction} for more details.
 }
 \description{
-` Fit all the models + the aggregation function
+This wrapper function fits all models and returns the fitted
+model objects. Note that this includes four models - SVM, Random Forest,
+XGBoost, and a simple OLS model. For more information on these models,
+see \link[ranger]{ranger}, \link[e1071]{svm}, \link[xgboost]{xgboost}, and
+\link[stats]{lm}.
 }
+\section{Functions}{
+\itemize{
+\item \code{predict(ModelEnsemble)}: S3 Prediction method for the ModelEnsemble object.
+
+}}

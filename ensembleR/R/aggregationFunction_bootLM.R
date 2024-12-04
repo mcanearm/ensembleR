@@ -1,7 +1,10 @@
 #' @title Fit Aggregation function by bootLM fit
 #' @export
-#' @describeIn fitAggregationFunction Fit a standard linear model to the data for aggregation.
+#' @description Function Fit a standard linear model to the data for aggregation.
 #' @inheritParams fitAggregationFunction
+#' @note
+#' This method is not intended to be used on its own, but rather used through
+#' the \link[ensembleR]{fitAggregationFunction} function.
 #' @param boot_iter The number of bootstrap iterations to perform.
 fitAggregationFunction_bootLM <- function(Y, y_hat, boot_iter=1000, ...) {
 
@@ -34,7 +37,8 @@ fitAggregationFunction_bootLM <- function(Y, y_hat, boot_iter=1000, ...) {
 
 #' @title Predict method for the bootLM aggregation function
 #' @export
-#' @describeIn fitAggregationFunction S3 prediction method for the bootLM aggregation function
+#' @describeIn fitAggregationFunction_bootLM S3 prediction method for the
+#' bootLM aggregation function
 predict.ModelAggregator_bootLM <- function(object, y_hat, alpha=0.05, ...) {
     x <- as.matrix(cbind(1, y_hat))
     means <- crossprod(object$betas, t(x))

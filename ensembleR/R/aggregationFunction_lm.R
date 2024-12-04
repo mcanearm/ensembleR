@@ -1,8 +1,10 @@
 #' @title Fit Aggregation function by simple LM fit
 #' @export
-#' @describeIn fitAggregationFunction Fit a standard linear model to the data for aggregation.
+#' @description Fit a standard linear model to the data for aggregation.
+#' @inheritParams fitAggregationFunction
 #' @import stats
-fitAggregationFunction_lm <- function(Y, y_hat, calibrate_sd=FALSE, ...) {
+#' @inherit fitAggregationFunction_bootLM note
+fitAggregationFunction_lm <- function(Y, y_hat, ...) {
     # TODO: Instead of calibrating based on a single validation set, use cross validation
     # to estimate the calibration parameters around:
     # 1. The standard deviation estimates
@@ -18,7 +20,7 @@ fitAggregationFunction_lm <- function(Y, y_hat, calibrate_sd=FALSE, ...) {
 }
 
 #' @export
-#' @describeIn fitAggregationFunction predict method for the LM aggregation function
+#' @describeIn fitAggregationFunction_lm predict method for the LM aggregation function
 #' @import stats
 predict.ModelAggregator_lm <- function(object, y_hat, alpha = 0.05, ...) {
     colnames(y_hat) <- names(object$model$coefficients)[2:length(object$model$coefficients)]

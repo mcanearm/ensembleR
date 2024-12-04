@@ -1,8 +1,20 @@
 #' @title Fit models
 #' @export
-#' @description` Fit all the models + the aggregation function
+#' @description This wrapper function fits all models and returns the fitted
+#' model objects. Note that this includes four models - SVM, Random Forest,
+#' XGBoost, and a simple OLS model. For more information on these models,
+#' see \link[ranger]{ranger}, \link[e1071]{svm}, \link[xgboost]{xgboost}, and
+#' \link[stats]{lm}.
+#' @param X A dataframe of covariates/explanatory variables. Strictly speaking,
+#' it can be a matrix, but it is assumed to be a dataframe so that categorical
+#' variables are handled effectively.
+#' @param Y A numeric vector for the response
+#' @param aggregation_method A string indicating the method to use for
+#' aggregation.
+#' @param validation_pct The percentage of the training data to hold apart
+#' for usage in fitting the aggregation method.
 #' @import ranger e1071 xgboost
-fit_models <- function(X, Y, aggregation_method=NULL, calibration_method=NULL, validation_pct=0.2, ...) {
+fit_models <- function(X, Y, aggregation_method=NULL, validation_pct=0.2, ...) {
     # Split the data into training and validation sets
     train_idx <- sample(1:nrow(X), (1-validation_pct) * nrow(X))
     train_X <- X[train_idx, ]
@@ -64,8 +76,24 @@ fit_models <- function(X, Y, aggregation_method=NULL, calibration_method=NULL, v
     ), class="ModelEnsemble")
 }
 
+#' @title Prediction method for ModelEnsemble
 #' @export
-predict.ModelEnsemble <- function(object, X, alpha=0.05, return_components=FALSE, ...) {
+#' @describeIn fit_models S3 Prediction method for the ModelEnsemble object.
+#' @param object A fitted ModelEnsemble object
+#' @param return_components A logical indicating whether to return the individual
+#' method predictions alongside the aggregation. Only relevant if the
+#' aggregation function is fitted. If it is not fitted, then this argument
+#' has no effect.
+#' @param ... Arbitrary arguments to be passed to the fitted aggregation
+#' function. These arguments do not apply and are unused if the aggregation
+#' function is not fitted.
+#' @return If no aggregation method is present in the `object`, a dataframe
+#' is returned containined the output all four methods. If an aggregation
+#' method is fitted, the results of the aggregation are returned, namely a
+#' dataframe consisting of the mean, lower and upper bounds of a prediction
+#' interval, and the predicted standard deviation for a particular value. See
+#' \link[ensembleR]{fitAggregationFunction} for more details.
+predict.ModelEnsemble <- function(object, X, return_components=FALSE, ...) {
     # Predict the ensemble
     if (!is.null(object$char_encoder)) {
         pred_features <- predict(object$char_encoder, X)
@@ -84,12 +112,12 @@ predict.ModelEnsemble <- function(object, X, alpha=0.05, return_components=FALSE
 
     # Predict the ensemble
     if (!is.null(object$aggregation_function)) {
-        aggregation <- predict(object$aggregation_function, y_hat, alpha=alpha)
+        aggregation <- predict(object$aggregation_function, y_hat, ...)
     } else {
         aggregation <- NULL
     }
 
-    if (return_components) {
+    if (return_components && !is.null(aggregation)) {
         list(
             "aggregated"=aggregation,
             "y_hat" = y_hat

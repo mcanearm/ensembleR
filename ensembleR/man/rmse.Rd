@@ -4,7 +4,12 @@
 \alias{rmse}
 \title{RMSE}
 \usage{
-rmse(y, y_hat)
+rmse(y, y_pred)
+}
+\arguments{
+\item{y}{A numeric vector of true y values}
+
+\item{y_pred}{A numeric vector of predicted values.}
 }
 \description{
 Helper RMSE function.
