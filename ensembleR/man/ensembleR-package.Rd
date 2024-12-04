@@ -9,10 +9,9 @@
 \packageDescription{ensembleR}
 }
 \details{
-The DESCRIPTION file:
-\packageDESCRIPTION{ensembleR}
-\packageIndices{ensembleR}
-~~ An overview of how to use the package, including the most important functions ~~
+
+ADD DETAILS
+
 }
 \author{
 \packageAuthor{ensembleR}
@@ -20,13 +19,13 @@ The DESCRIPTION file:
 Maintainer: \packageMaintainer{ensembleR}
 }
 \references{
-~~ Literature or other references for background information ~~
+    INSERT REFS
 }
 \keyword{ package }
 \seealso{
-~~ Optional links to other man pages, e.g. ~~
-~~ \code{\link[<pkg>:<pkg>-package]{<pkg>}} ~~
+    INSERT SEE ALSOS
 }
 \examples{
-~~ simple examples of the most important functions ~~
+    # notrun
+    rnorm(100)
 }

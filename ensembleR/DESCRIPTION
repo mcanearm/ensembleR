@@ -1,18 +1,27 @@
 Package: ensembleR
 Type: Package
-Title: What the package does (short line)
-Version: 1.0
+Title: Package for creating an ensemble predictor from a matrix of arbitrary regressors
+Version: 0.1
 Date: 2024-10-31
-Author: Who wrote it
-Maintainer: Who to complain to <yourfault@somewhere.net>
-Description: More about what it does (maybe more than one line)
-License: What license is it under?
+Author: Matthew McAnear, Haowen Wu, Meijie Yue
+Maintainer: Matthew McAnear <mmcanear@umich.edu>
+Encoding: UTF-8
+Description: 
+    For complicated regression tasks, it is not entirely clear what 
+    the best approach is for solving problems. Often, analysts and practitioners
+    will use multiple methods and select the best problem based on cross-validation.
+    However, another approach is to weight the values according to a relatively
+    simple aggregation scheme. We include multiple of such aggregation methods
+    so that arbitrary regressors can be used in conjunction to make a final, more
+    optimal predictor.
+License: GPL-3
 RoxygenNote: 7.3.2
 Imports: 
     ranger,
     xgboost,
     caret,
     e1071,
+    quantreg
 Depends: 
     R (>= 2.10)
 LazyData: true

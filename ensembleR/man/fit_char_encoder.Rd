@@ -7,10 +7,22 @@
 \usage{
 fit_char_encoder(X)
 
-\method{predict}{char_encoder}(obj, X)
+\method{predict}{char_encoder}(object, X, ...)
+}
+\arguments{
+\item{X}{The covariate features. Expects a data.frame format, since the
+function is searching for character columns.}
+
+\item{object}{A char_encoder object, consistent with the predict interface.}
+
+\item{...}{Unused ellipsis argument. Added for consistency with `predict`
+interface.}
 }
 \description{
-One Hot Encoder for categorical variables
+This is a thin wrapper around the \link[caret]{dummyVars} function that
+fits a one-hot encoder to a dataset. Here, we assume that any character
+variables are actually categorical, and then use the full-rank version
+of those variables (drop one level).
 }
 \section{Functions}{
 \itemize{

@@ -1,7 +1,13 @@
 #' @title Fit Aggregation Function EM
 #' @export
-#' @describeIn fitAggregationFunction Fit a Normal mixture model on the regressors using the EM algorithm
-fitAggregationFunction_EM <- function(Y, y_hat, tol = 1e-4, max_iter = 1000, verbose = FALSE) {
+#' @description Fit a Normal mixture model on the regressors using the EM algorithm
+#' @param tol Minimum distance between successive likelihoods before the algorithm is
+#' considered to have converged
+#' @param max_iter Maximum number of iterations the EM algorithm is allowed to run
+#' @param verbose Logical indicator for whether or not to print progress messages
+#' @inheritParams fitAggregationFunction
+#' @inherit fitAggregationFunction_bootLM note
+fitAggregationFunction_EM <- function(Y, y_hat, tol = 1e-4, max_iter = 1000, verbose = FALSE, ...) {
     # Number of predictors
     k <- ncol(y_hat)
 
@@ -60,9 +66,14 @@ fitAggregationFunction_EM <- function(Y, y_hat, tol = 1e-4, max_iter = 1000, ver
 
 
 #' @export
-predict.ModelAggregator_EM <- function(obj, y_hat, alpha=0.05, n_trials=1000, ...) {
-    w <- obj$betas
-    sigma <- obj$sigma
+#' @describeIn fitAggregationFunction_EM Predict method for the S3 EM Model Aggregation function.
+#' @param n_trials The number of random draws to run for the mixture
+#' @param alpha The significance level for the prediction interval
+#' @param object The fitted ModelAggregator_EM function
+#' @param ... Additional arguments; unused and added to align with predict interface.
+predict.ModelAggregator_EM <- function(object, y_hat, alpha=0.05, n_trials=1000, ...) {
+    w <- object$betas
+    sigma <- object$sigma
 
     # assume the same sample weights and distribution for each variable
     choices <- sample(1:length(w), n_trials, replace=TRUE, prob=w)
