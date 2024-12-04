@@ -61,9 +61,9 @@ fitAggregationFunction_EM <- function(Y, y_hat, tol = 1e-4, max_iter = 1000, ver
 
 #' @export
 #' @describeIn fitAggregationFunction Predict method for the S3 EM Model Aggregation function.
-predict.ModelAggregator_EM <- function(obj, y_hat, alpha=0.05, n_trials=1000, ...) {
-    w <- obj$betas
-    sigma <- obj$sigma
+predict.ModelAggregator_EM <- function(object, y_hat, alpha=0.05, n_trials=1000, ...) {
+    w <- object$betas
+    sigma <- object$sigma
 
     # assume the same sample weights and distribution for each variable
     choices <- sample(1:length(w), n_trials, replace=TRUE, prob=w)

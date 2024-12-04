@@ -29,8 +29,9 @@ val_Y <- val_df$Age
 # example usage - uses predict methods
 modelEnsemble <- fit_models(train_X, train_Y, validation_pct=0.01)
 y_hats <- predict(modelEnsemble, val_X)
-aggregator <- ensembleR::fitAggregationFunction(val_Y, y_hats, method="EM")
-predict(aggregator, new_y_hats)
+aggregator <- ensembleR::fitAggregationFunction(val_Y, y_hats, method="bootLM")
+
+sloop::s3_dispatch(predict(aggregator, y_hats))
 
 
 simple_mean_sd <- sd(val_Y - rowMeans(y_hats))

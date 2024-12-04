@@ -2,9 +2,17 @@
 #' @export
 #' @describeIn fitAggregationFunction Fit a quantile regression model to the data for aggregation.
 #' @import quantreg
-fitAggregationFunction_quantile <- function(Y, y_hat, quantiles = c(0.025, 0.5, 0.975), ...) {
+fitAggregationFunction_quantile <- function(Y, y_hat, ...) {
     # Ensure y_hat is a matrix
     y_hat <- as.matrix(y_hat)
+
+    # statically code right now to a 95% prediction interval
+    quantiles = c(0.025, 0.5, 0.975)
+
+    # TODO: @haowen the quantreg method has an easy way to fit multiple quantiles
+    # at once - could you modify this code to fit on a range of tau values
+    # and then use the alpha value to find the closest prediction interval
+    # for that alpha value?
 
     # Fit quantile regression for each specified quantile
     models <- lapply(quantiles, function(q) {
@@ -27,11 +35,16 @@ fitAggregationFunction_quantile <- function(Y, y_hat, quantiles = c(0.025, 0.5, 
 
 #' @export
 #' @describeIn fitAggregationFunction General S3 method for the quantile prediction method
-predict.QuantileAggregation <- function(obj, y_hat, ...) {
+#' @inheritParams fitAggregationFunction
+predict.QuantileAggregation <- function(object, y_hat, alpha=0.05, ...) {
     y_hat <- as.matrix(y_hat)
 
+    if (alpha != 0.05) {
+        warning("Currently, only an alpha value of 0.05 is supported. Ignoring alpha value.")
+    }
+
     # Generate predictions for each quantile
-    predictions <- sapply(obj$models, function(model) {
+    predictions <- sapply(object$models, function(model) {
         cbind(1, y_hat) %*% coef(model)  # Add intercept and multiply by coefficients
     })
 

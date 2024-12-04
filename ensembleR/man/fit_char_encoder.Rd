@@ -7,10 +7,13 @@
 \usage{
 fit_char_encoder(X)
 
-\method{predict}{char_encoder}(obj, X)
+\method{predict}{char_encoder}(object, X, ...)
 }
 \description{
-One Hot Encoder for categorical variables
+This is a thin wrapper around the \link[caret]{dummyVars} function that
+fits a one-hot encoder to a dataset. Here, we assume that any character
+variables are actually categorical, and then use the full-rank version
+of those variables (drop one level).
 }
 \section{Functions}{
 \itemize{

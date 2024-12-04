@@ -1,6 +1,8 @@
 #' @title Fit Aggregation function by bootLM fit
 #' @export
 #' @describeIn fitAggregationFunction Fit a standard linear model to the data for aggregation.
+#' @inheritParams fitAggregationFunction
+#' @param boot_iter The number of bootstrap iterations to perform.
 fitAggregationFunction_bootLM <- function(Y, y_hat, boot_iter=1000, ...) {
 
     x <- as.matrix(cbind(1, y_hat))  # fit an intercept
@@ -23,7 +25,6 @@ fitAggregationFunction_bootLM <- function(Y, y_hat, boot_iter=1000, ...) {
     # and residual standard deviation
     d_free <- nrow(y_hat) - ncol(y_hat) - 2
 
-    # calibrator <- ensembleR::fitCalibrator(Y, agg_lm$fitted.values, y_hat)
     # TODO: consider modifying the bias term and/or fitting the residuals directly
     structure(list("betas"=beta_mat, "scale"=resid_scale, "df"=d_free),
         class = c("ModelAggregator_bootLM", "list")
@@ -34,12 +35,12 @@ fitAggregationFunction_bootLM <- function(Y, y_hat, boot_iter=1000, ...) {
 #' @title Predict method for the bootLM aggregation function
 #' @export
 #' @describeIn fitAggregationFunction S3 prediction method for the bootLM aggregation function
-predict.ModelAggregator_bootLM <- function(obj, y_hat, alpha=0.05, n_trials=1000, return_sims=FALSE, ...) {
+predict.ModelAggregator_bootLM <- function(object, y_hat, alpha=0.05, ...) {
     x <- as.matrix(cbind(1, y_hat))
-    means <- crossprod(obj$betas, t(x))
+    means <- crossprod(object$betas, t(x))
 
-    lower <- means + qt(alpha/2, obj$df, lower.tail = TRUE) * obj$scale
-    upper <- means + qt(alpha/2, obj$df, lower.tail = FALSE) * obj$scale
+    lower <- means + qt(alpha/2, object$df, lower.tail = TRUE) * object$scale
+    upper <- means + qt(alpha/2, object$df, lower.tail = FALSE) * object$scale
 
     pred_sd <- apply(means, 2, sd)
 

@@ -1,5 +1,11 @@
 #' @title One Hot Encoder for categorical variables
 #' @export
+#' @description
+#' This is a thin wrapper around the \link[caret]{dummyVars} function that
+#' fits a one-hot encoder to a dataset. Here, we assume that any character
+#' variables are actually categorical, and then use the full-rank version
+#' of those variables (drop one level).
+#' @importFrom caret dummyVars
 fit_char_encoder <- function(X) {
     is_char <- apply(X, 2, function(col) {
         tmp <- suppressWarnings(as.numeric(col))
@@ -20,8 +26,8 @@ fit_char_encoder <- function(X) {
 
 #' @export
 #' @describeIn fit_char_encoder Predict method for char_encoder S3 class
-predict.char_encoder <- function(obj, X) {
-    dummy_vars <- predict(obj$dummy_model, newdata=X)
-    fit_features <- as.matrix(cbind(X[, obj$numeric_cols], dummy_vars))
+predict.char_encoder <- function(object, X, ...) {
+    dummy_vars <- predict(object$dummy_model, newdata=X)
+    fit_features <- as.matrix(cbind(X[, object$numeric_cols], dummy_vars))
     fit_features
 }
