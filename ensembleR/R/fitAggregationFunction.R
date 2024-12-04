@@ -13,7 +13,9 @@
 #' @param y_hat The predictions output from a model. Note that this is passed
 #' as an \eqn{N \times K} matrix, where \eqn{K} is the number of predictors.
 #' @param method A string indicating which method of aggregation to use.
-#' Available methods are `EM`, `LM`, `bootLM`, and `quantile`.
+#' Available methods are "EM", "LM", "bootLM", and "quantile". See
+#' \link[ensembleR]{fitAggregationFunction_EM}, \link[ensembleR]{fitAggregationFunction_lm},
+#' \link[ensembleR]{fitAggregationFunction_bootLM}, and \link[ensembleR]{fitAggregationFunction_quantile}
 #' @param ... Additional arguments to pass to the individual aggregation fitting methods. Each has their own
 #' set of parameters for customizing the aggregation process according to the methodology
 #' in the model.
