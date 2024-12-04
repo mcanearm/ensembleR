@@ -1,4 +1,7 @@
+#' @title Fit Aggregation by Quantile Regression
 #' @export
+#' @describeIn fitAggregationFunction Fit a quantile regression model to the data for aggregation.
+#' @import quantreg
 fitAggregationFunction_quantile <- function(Y, y_hat, quantiles = c(0.025, 0.5, 0.975), ...) {
     # Ensure y_hat is a matrix
     y_hat <- as.matrix(y_hat)
@@ -23,6 +26,7 @@ fitAggregationFunction_quantile <- function(Y, y_hat, quantiles = c(0.025, 0.5, 
 }
 
 #' @export
+#' @describeIn fitAggregationFunction General S3 method for the quantile prediction method
 predict.QuantileAggregation <- function(obj, y_hat, ...) {
     y_hat <- as.matrix(y_hat)
 

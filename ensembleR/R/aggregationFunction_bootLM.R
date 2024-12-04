@@ -31,7 +31,9 @@ fitAggregationFunction_bootLM <- function(Y, y_hat, boot_iter=1000, ...) {
 }
 
 
+#' @title Predict method for the bootLM aggregation function
 #' @export
+#' @describeIn fitAggregationFunction S3 prediction method for the bootLM aggregation function
 predict.ModelAggregator_bootLM <- function(obj, y_hat, alpha=0.05, n_trials=1000, return_sims=FALSE, ...) {
     x <- as.matrix(cbind(1, y_hat))
     means <- crossprod(obj$betas, t(x))

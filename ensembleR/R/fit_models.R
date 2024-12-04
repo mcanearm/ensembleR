@@ -1,6 +1,7 @@
 #' @title Fit models
 #' @export
 #' @description` Fit all the models + the aggregation function
+#' @import ranger e1071 xgboost
 fit_models <- function(X, Y, aggregation_method=NULL, calibration_method=NULL, validation_pct=0.2, ...) {
     # Split the data into training and validation sets
     train_idx <- sample(1:nrow(X), (1-validation_pct) * nrow(X))
