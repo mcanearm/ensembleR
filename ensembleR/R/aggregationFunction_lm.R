@@ -21,6 +21,7 @@ fitAggregationFunction_lm <- function(Y, y_hat, ...) {
 
 #' @export
 #' @describeIn fitAggregationFunction_lm predict method for the LM aggregation function
+#' @inheritParams fitAggregationFunction_EM
 #' @import stats
 predict.ModelAggregator_lm <- function(object, y_hat, alpha = 0.05, ...) {
     colnames(y_hat) <- names(object$model$coefficients)[2:length(object$model$coefficients)]

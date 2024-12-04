@@ -20,6 +20,10 @@ as an \eqn{N \times K} matrix, where \eqn{K} is the number of predictors.}
 \item{...}{Additional arguments to pass to the individual aggregation fitting methods. Each has their own
 set of parameters for customizing the aggregation process according to the methodology
 in the model.}
+
+\item{object}{The fitted ModelAggregator_EM function}
+
+\item{alpha}{The significance level for the prediction interval}
 }
 \description{
 Function Fit a standard linear model to the data for aggregation.
