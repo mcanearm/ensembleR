@@ -21,7 +21,9 @@ Imports:
     xgboost,
     caret,
     e1071,
-    quantreg
+    quantreg,
+    Rcpp (>= 1.0.13)
 Depends: 
     R (>= 2.10)
 LazyData: true
+LinkingTo: Rcpp

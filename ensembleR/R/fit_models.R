@@ -44,7 +44,7 @@ fit_models <- function(X, Y, aggregation_method=NULL, validation_pct=0.2, ...) {
 
     # 3. XGBoost Model - requires the fit_features matrix
     xgb_train <- xgboost::xgb.DMatrix(data = fit_features, label = train_Y)
-    xgb_fit <- xgboost::xgboost(data = xgb_train, objectective = "reg:squarederror", nrounds = 500, verbose = 0)
+    xgb_fit <- xgboost::xgboost(data = xgb_train, objective = "reg:squarederror", nrounds = 500, verbose = 0)
     xgb_pred <- predict(xgb_fit, val_features)
 
     # 4. SVM Regression Model
