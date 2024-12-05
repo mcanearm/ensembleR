@@ -1,24 +1,34 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
+//' @name BootLM
 //' @export
-//' @describeIn aggregationFunction_bootLM Run bootstrapped linear regression in Rcpp.
+//' @title Bootstrap LM
+//' @description C++ implementation of the bootstrapping LM loop used in
+//' \link[ensembleR]{fitAggregationFunction_bootLM}. This function is not
+//' intended to be called directly.
+//' @param x A numeric matrix of features
+//' @param y A numeric vector of the response variable
+//' @param boot_iter An integer specifying the number of bootstrap iterations.
 // [[Rcpp::export]]
-NumericMatrix bootLM( NumericMatrix x, NumericVector y, int boot_iter = 100) {
+NumericMatrix bootLM( NumericMatrix x, NumericVector y, int boot_iter = 1000) {
   int nrow = x.nrow();
   int ncol = x.ncol();
+
+  // Since these R functions are already optimized in C++, just invoke them
   Function chol("chol");
   Function forwardsolve("forwardsolve");
   Function backsolve("backsolve");
   Function matmul("%*%");
 
+  // Create a matrix to store the bootstrapped beta values
   Rcpp::NumericMatrix beta_mat(ncol, boot_iter);
-  // Rcpp::NumericMatrix y_mat(nrow, boot_iter);
+
+  // For each bootstrap, fit the linear model and store the beta coefficients
+  // Relying on the speed on Rcpp for the looping over base R
   for (int i = 0; i < boot_iter; i++) {
       IntegerVector idx = Rcpp::sample(nrow, nrow, true) - 1;
-      // Rcpp::NumericMatrix x_boot = x[idx, _];
       Rcpp::NumericVector y_boot = y[idx];
-      // y_mat(_, i) = y_boot;
       Rcpp::NumericMatrix x_boot(nrow, ncol);
       for (int ix = 0; ix < nrow; ix++) {
           for (int j = 0; j < ncol; j++)
