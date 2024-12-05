@@ -27,6 +27,9 @@ in the model.}
 }
 \description{
 Function Fit a standard linear model to the data for aggregation.
+The looping for bootstrap iterations is done through Rcpp, alongside using
+base R functions for things like Cholesky decomposition and matrix
+multiplication.
 }
 \section{Functions}{
 \itemize{

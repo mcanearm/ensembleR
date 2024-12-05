@@ -1,6 +1,9 @@
 #' @title Fit Aggregation function by bootLM fit
 #' @export
 #' @description Function Fit a standard linear model to the data for aggregation.
+#' The looping for bootstrap iterations is done through Rcpp, alongside using
+#' base R functions for things like Cholesky decomposition and matrix
+#' multiplication.
 #' @inheritParams fitAggregationFunction
 #' @note
 #' This method is not intended to be used on its own, but rather used through
@@ -9,14 +12,7 @@
 fitAggregationFunction_bootLM <- function(Y, y_hat, boot_iter=1000, ...) {
 
     x <- as.matrix(cbind(1, y_hat))  # fit an intercept
-
-    beta_mat <- replicate(boot_iter, expr={
-        idx <- sample(1:nrow(x), replace=TRUE)
-        x_mini <- x[idx, ]
-        y_mini <- Y[idx]
-        u <- chol(crossprod(x_mini, x_mini))
-        betas <- backsolve(u, forwardsolve(t(u), t(x_mini) %*% y_mini))[, 1]
-    }, simplify = TRUE)
+    beta_mat <- bootLM(x, Y, boot_iter)
 
     val_preds <- x %*% beta_mat
     val_resid <- Y - val_preds
