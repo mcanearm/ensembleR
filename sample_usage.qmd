@@ -18,7 +18,6 @@ devtools::install_local("/Username/ensembleR-dev/ensembleR")
 library(ensembleR)
 、、、、
 If no error occurs, the package is successfully installed.
-These packages have more recent versions available.
 
 4.We're going to go through a simple guided test for regression examples. Let's use the abalone dataset.
 
