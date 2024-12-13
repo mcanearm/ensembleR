@@ -38,11 +38,37 @@ Expected output:
 
 If the package includes built-in datasets like `abalone`, you can load and inspect it:
 
-```r
 # Load the dataset
 data(abalone)
 str(abalone)
 # Summarize the data
 summary(abalone)
-、、、
+’‘’
+Expected output:
+> str(abalone)
+'data.frame':	4177 obs. of  9 variables:
+ $ Sex             : chr  "M" "M" "F" "M" ...
+ $ Length          : num  0.455 0.35 0.53 0.44 0.33 0.425 0.53 0.545 0.475 0.55 ...
+ $ Diameter        : num  0.365 0.265 0.42 0.365 0.255 0.3 0.415 0.425 0.37 0.44 ...
+ $ Height          : num  0.095 0.09 0.135 0.125 0.08 0.095 0.15 0.125 0.125 0.15 ...
+ $ whole_weight_g  : num  0.514 0.226 0.677 0.516 0.205 ...
+ $ shucked_weight_g: num  0.2245 0.0995 0.2565 0.2155 0.0895 ...
+ $ viscera_weight_g: num  0.101 0.0485 0.1415 0.114 0.0395 ...
+ $ shell_weight_g  : num  0.15 0.07 0.21 0.155 0.055 0.12 0.33 0.26 0.165 0.32 ...
+ $ Rings           : int  15 7 9 10 7 8 20 16 9 19 ...
+> summary(abalone)
+     Sex                Length         Diameter          Height       whole_weight_g   shucked_weight_g viscera_weight_g
+ Length:4177        Min.   :0.075   Min.   :0.0550   Min.   :0.0000   Min.   :0.0020   Min.   :0.0010   Min.   :0.0005  
+ Class :character   1st Qu.:0.450   1st Qu.:0.3500   1st Qu.:0.1150   1st Qu.:0.4415   1st Qu.:0.1860   1st Qu.:0.0935  
+ Mode  :character   Median :0.545   Median :0.4250   Median :0.1400   Median :0.7995   Median :0.3360   Median :0.1710  
+                    Mean   :0.524   Mean   :0.4079   Mean   :0.1395   Mean   :0.8287   Mean   :0.3594   Mean   :0.1806  
+                    3rd Qu.:0.615   3rd Qu.:0.4800   3rd Qu.:0.1650   3rd Qu.:1.1530   3rd Qu.:0.5020   3rd Qu.:0.2530  
+                    Max.   :0.815   Max.   :0.6500   Max.   :1.1300   Max.   :2.8255   Max.   :1.4880   Max.   :0.7600  
+ shell_weight_g       Rings       
+ Min.   :0.0015   Min.   : 1.000  
+ 1st Qu.:0.1300   1st Qu.: 8.000  
+ Median :0.2340   Median : 9.000  
+ Mean   :0.2388   Mean   : 9.934  
+ 3rd Qu.:0.3290   3rd Qu.:11.000  
+ Max.   :1.0050   Max.   :29.000  
 
