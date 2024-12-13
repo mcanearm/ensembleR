@@ -17,6 +17,6 @@ StripTrailingWhitespace: Yes
 
 BuildType: Package
 PackageUseDevtools: Yes
-PackagePath: /Users/mcanearm/Projects/ensembleR/ensembleR
+PackagePath: /Users/mcanearm/Projects/ensembleR/
 PackageInstallArgs: --no-multiarch --with-keep.source
 PackageRoxygenize: rd,collate,namespace
