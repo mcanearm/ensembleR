@@ -1,27 +1,48 @@
 ---
 title: "Guided Simulation"
+author: Matthew Mcnear, haowen Wu, Meijie yue
 format: html
 ---
+1.Introduction about this document
+This document is created in order to provides step-by-step guidance on how to download and use the ensembleR package from GitHub
 
-# ensembleR Guided Usage
-
-We're going to go through a simple guided test for regression examples. Let's use the abalone dataset.
-
-## Running Code
-
-Let
-
+2.Preparation for devtools package in R
+Before install ensembleR, please insure you have installed "devtools" in R:
 ```{r}
-
-fitModelMatrix <- 
-1 + 1
+install.packages("devtools")
+library(devtools)
 ```
+3.Download the ensembleR zip and library the package
+、、、{r}
+devtools::install_local("/Username/ensembleR-dev/ensembleR")
+library(ensembleR)
+、、、、
+If no error occurs, the package is successfully installed.
+These packages have more recent versions available.
 
-You can add options to executable code like this 
+4.We're going to go through a simple guided test for regression examples. Let's use the abalone dataset.
 
-```{r}
-#| echo: false
-2 * 2
+## 4.1 List Available Functions
+After loading the package, you can list all available functions using:
+```r
+ls("package:ensembleR")
 ```
+Expected output:
+```plaintext
+[1] "abalone"                         "bootLM"                          "fit_char_encoder"               
+[4] "fit_models"                      "fitAggregationFunction"          "fitAggregationFunction_bootLM"  
+[7] "fitAggregationFunction_EM"       "fitAggregationFunction_lm"       "fitAggregationFunction_quantile"
+[10] "rmse"
+```
+##4.2Example:Using the `abalone`dataset
 
-The `echo: false` option disables the printing of code (only output is displayed).
+If the package includes built-in datasets like `abalone`, you can load and inspect it:
+
+```r
+# Load the dataset
+data(abalone)
+str(abalone)
+# Summarize the data
+summary(abalone)
+、、、
+
