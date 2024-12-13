@@ -48,9 +48,8 @@ timings <- microbenchmark::microbenchmark(
     "quantile" = quantile <- ensembleR::fitAggregationFunction(val_Y, y_hats, method="quantile"),
     times=50
 )
-# timing_summary <- summary(timings)
-# timing_summary[order(timing_summary[, "mean"]), c("expr", "lq", "mean", "uq")]
-
+timing_summary <- summary(timings)
+timing_summary[order(timing_summary[, "mean"]), c("expr", "lq", "mean", "uq")]
 timings
 
 
@@ -94,6 +93,71 @@ all_methods <- cbind(
 round(all_methods, 3)
 
 
+# Estimate the RMSE on the Abalone dataset using bootstrapping of our test set
+agg_preds <- sapply(list("EM"=EM, "LM"=LM, "bootLM"=bootLM, "quantile"=quantile), function(mod) {
+    predict(mod, test_y_hats)[, "mean"]
+})
+all_methods <- cbind(agg_preds, test_y_hats)
+
+bootstrapped_RMSE <- replicate(1000, {
+    idx <- sample(1:nrow(test_y_hats), nrow(test_y_hats), replace=TRUE)
+    mean_agg <- rowMeans(agg_preds[idx, ])
+    all_methods_sub <- cbind(mean_agg, all_methods[idx, ])
+    apply(all_methods_sub, 2, function(col) rmse(test_Y[idx], col))
+})
+melted_data <- reshape2::melt(t(bootstrapped_RMSE), value.name = "rmse")
+melted_data$method_type <- ifelse(melted_data$Var2 %in% c("EM", "LM", "bootLM", "quantile", "mean_agg"), "Aggregation", "Base")
+
+ggplot(data=melted_data, aes(x=Var2, y=rmse, fill=method_type)) + geom_boxplot() + theme_bw() + labs(x="Method", y="RMSE")
+
+
+# Now, let's do a bootstrapped estimation of interval coverage
+boot_coverage <- replicate(250, expr={
+    boot_eval <- sapply(list("EM"=EM, "LM"=LM, "bootLM"=bootLM, "quantile"=quantile), function(mod) {
+        idx <- sample(1:nrow(test_y_hats), nrow(test_y_hats), replace=TRUE)
+        out <- predict(mod, test_y_hats[idx, ])
+        mean(out[, "lower"] <= test_Y[idx] & out[, "upper"] >= test_Y[idx])
+    })
+})
+
+simple_mean_coverage <- replicate(250, expr={
+    idx <- sample(1:nrow(test_y_hats), nrow(test_y_hats), replace=TRUE)
+    out <- rowMeans(test_y_hats[idx, ])
+    mean((out - 1.96*simple_mean_sd <= test_Y[idx] )& (out + 1.96*simple_mean_sd) >= test_Y[idx])
+})
+
+coverage_boot_samples <- rbind(boot_coverage, "simple_mean"=simple_mean_coverage)
+
+interval_length <- replicate(250, expr={
+    boot_eval <- sapply(list("EM"=EM, "LM"=LM, "bootLM"=bootLM, "quantile"=quantile), function(mod) {
+        idx <- sample(1:nrow(test_y_hats), nrow(test_y_hats), replace=TRUE)
+        out <- predict(mod, test_y_hats[idx, ])
+        mean(out[, "upper"] - out[, "lower"])
+    })
+})
+
+melted_data <- reshape2::melt(t(coverage_boot_samples), value.name = "coverage")
+# melted_data$method_type <- ifelse(melted_data$Var2 %in% c("EM", "LM", "bootLM", "quantile", "mean_agg"), "Aggregation", "Base")
+ggplot(data = melted_data, aes(x = Var2, y = coverage)) +
+    geom_boxplot() +
+    theme_bw() +
+    labs(x = "Aggregation Method", y = "Prediction Interval Coverage") +
+    geom_hline(yintercept = 0.95, col = "red", linetype = 2) +
+    scale_y_continuous( labels = scales::percent_format(accuracy = 1), breaks = seq(0.92, 0.98, 0.01)) +
+    theme(text=element_text(size=18))
+
+
+
+bootstrapped <- replicate(1000, {
+    idx <- sample(1:nrow(test_y_hats), nrow(test_y_hats), replace=TRUE)
+    mean_agg <- rowMeans(agg_preds[idx, ])
+})
+melted_data <- reshape2::melt(t(bootstrapped_RMSE), value.name = "rmse")
+melted_data$method_type <- ifelse(melted_data$Var2 %in% c("EM", "LM", "bootLM", "quantile", "mean_agg"), "Aggregation", "Base")
+ggplot(data=melted_data, aes(x=Var2, y=rmse, fill=method_type)) + geom_boxplot() + theme_bw() + labs(x="Method", y="RMSE")
+
+
+# Generate plots for BootLM and Quantile Regression interval
 out <- predict(quantile, test_y_hats, alpha=0.05)
 in_interval <- out[, "lower"] <= test_Y & out[, "upper"] >= test_Y
 quantile_int <- cbind.data.frame(out, in_interval, test_Y)
@@ -107,50 +171,21 @@ boot_int <- boot_int[order(boot_int[, "test_Y"]), ]
 
 par(mfrow=c(2, 1))
 
+ylimits <- c(min(boot_int$lower, min(quantile_int$lower, test_Y)), max(max(quantile_int$upper, test_Y), boot_int$upper))
+
+# ChatGPT was used to generate some of the plotting code.
 # First plot (QuantileAggregation)
 plot(1:nrow(quantile_int), quantile_int$test_Y, pch=16, col=ifelse(quantile_int$in_interval, "black", "red"),
-     xlab="", ylab="Age", main="Prediction Intervals - Quantile", ylim=range(c(quantile_int$lower, quantile_int$upper)))
+     xlab="", ylab="Age", main="Prediction Intervals - Quantile", ylim=ylimits)
 arrows(1:nrow(quantile_int), quantile_int$lower, 1:nrow(quantile_int), quantile_int$upper,
        angle=90, code=2, length=0, col=ifelse(quantile_int$in_interval, "black", "red"))
 
 # Second plot (BootLM)
 plot(1:nrow(boot_int), boot_int$test_Y, pch=16, col=ifelse(boot_int$in_interval, "black", "red"),
-     xlab="", ylab="Age", main="Prediction Intervals - BootLM", ylim=range(c(boot_int$lower, boot_int$upper)))
+     xlab="", ylab="Age", main="Prediction Intervals - BootLM", ylim=ylimits)
 arrows(1:nrow(boot_int), boot_int$lower, 1:nrow(boot_int), boot_int$upper,
        angle=90, code=2, length=0, col=ifelse(boot_int$in_interval, "black", "red"))
 
-
-
-
-# IGNORE PLOTS BELOW HERE FOR NOW, BUT PLEASE DON'T DELETE
-alphas <- c(0.01, 0.05, 0.10)
-for (pred_set in list(predictions_lm, predictions_boot, predEM, pred_quant)) {
-    in_interval <- pred_set[, "lower"] <= test_Y & pred_set[, "upper"] >= test_Y
-    plot_df <- cbind.data.frame(pred_set, test_Y, in_interval)
-    plot_df <- plot_df[order(plot_df[, "test_Y"]), ]
-    print(mean(in_interval))
-    ggplot(data = plot_df,
-           aes(
-               x = 1:nrow(plot_df),
-               color = in_interval,
-               y = mean,
-               ymin = lower,
-               ymax = upper
-           )) +
-        geom_point() +
-        geom_errorbar()
-}
-
-predictions <- predictions_boot
-in_interval <- predictions[, "lower"] <= test_Y & predictions[, "upper"] >= test_Y
-plot_df <- cbind.data.frame(predictions, test_Y, in_interval)
-plot_df <- plot_df[order(plot_df[, "test_Y"]),]
-
-ggplot(data=plot_df, aes(x=1:nrow(plot_df), color=in_interval, y=test_Y, ymin=lower, ymax=upper)) +
-    geom_point() +
-    geom_errorbar()
-
-mean(in_interval == "True")
 
 
 
