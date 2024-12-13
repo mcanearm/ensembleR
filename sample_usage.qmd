@@ -134,8 +134,9 @@ cat(sprintf("RMSE: %.3f\n", rmse_val))
 cat(sprintf("Coverage: %.3f\n", coverage))
 cat(sprintf("Interval Length: %.3f\n", interval_length))
 ```
-Expected output:
+
 ```
+# Expected output
 Evaluation Metrics:
 RMSE: 2.111
 Coverage: 0.945
@@ -157,8 +158,9 @@ cat(sprintf("RMSE: %.3f\n", rmse_simple))
 cat(sprintf("Coverage: %.3f\n", coverage_simple))
 cat(sprintf("Interval Length: %.3f\n", interval_length_simple))
 ```
-Expected output:
+
 ```
+# Expected output:
 Simple Mean Evaluation Metrics:
 RMSE: 2.099
 Coverage: 0.940
