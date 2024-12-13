@@ -81,7 +81,7 @@ Expected output:
  Max.   :1.0050   Max.   :29.000  
  ```
 
-####4.3Sample usage， difference between fitting models with aggregation and without aggregation(Simple Mean Example)
+## 4.3 Sample usage， difference between fitting models with aggregation and without aggregation(Simple Mean Example)
 
 # Load Abalone Dataset
 ```{r}
