@@ -80,3 +80,90 @@ Expected output:
  3rd Qu.:0.3290   3rd Qu.:11.000  
  Max.   :1.0050   Max.   :29.000  
  ```
+
+####4.3Sample usage， difference between fitting models with aggregation and without aggregation(Simple Mean Example)
+
+#Load Abalone Dataset
+```{r}
+data(abalone, package="ensembleR")
+abalone$Age <- abalone$Rings + 1.5
+abalone$Rings <- NULL
+```
+#Split Data as Training, Validation, and Test Sets
+```{r}
+set.seed(123) 
+train_idx <- sample(1:nrow(abalone), 0.8 * nrow(abalone))
+test_set_idx <- setdiff(1:nrow(abalone), train_idx)
+val_set_idx <- sample(train_idx, 0.2 * length(train_idx))
+train_idx <- setdiff(train_idx, val_set_idx)
+
+train_df <- abalone[train_idx, ]
+val_df <- abalone[val_set_idx, ]
+test_df <- abalone[test_set_idx, ]
+
+train_Y <- train_df$Age
+train_X <- train_df[, -which(names(train_df) == "Age")]
+
+val_X <- val_df[, -which(names(val_df) == "Age")]
+val_Y <- val_df$Age
+
+test_X <- test_df[, -which(names(test_df) == "Age")]
+test_Y <- test_df$Age
+```
+# Fit Models with Aggregation
+```{r}
+modelEnsemble <- fit_models(train_X, train_Y, validation_pct = 0.01)
+y_hats <- predict(modelEnsemble, val_X)
+aggregator <- fitAggregationFunction(val_Y, y_hats, method = "bootLM")
+```
+
+# Predict Using the Ensemble on Test Data
+```{r}
+test_y_hats <- predict(modelEnsemble, test_X)
+out <- predict(aggregator, test_y_hats, alpha = 0.05)
+```
+
+# Evaluate the Model
+```{r}
+coverage <- mean(out[, "lower"] <= test_Y & out[, "upper"] >= test_Y)
+interval_length <- mean(out[, "upper"] - out[, "lower"])
+rmse_val <- rmse(test_Y, out[, "mean"])
+
+cat("Evaluation Metrics:\n")
+cat(sprintf("RMSE: %.3f\n", rmse_val))
+cat(sprintf("Coverage: %.3f\n", coverage))
+cat(sprintf("Interval Length: %.3f\n", interval_length))
+```
+Expected output:
+```
+Evaluation Metrics:
+RMSE: 2.111
+Coverage: 0.945
+Interval Length: 8.406
+```
+
+# Fit Models Without Aggregation (Simple Mean Example)
+```{r}
+simple_mean <- rowMeans(test_y_hats)
+simple_mean_sd <- sd(val_Y - rowMeans(y_hats))
+
+coverage_simple <- mean(simple_mean - 1.96 * simple_mean_sd <= test_Y &
+                        simple_mean + 1.96 * simple_mean_sd >= test_Y)
+interval_length_simple <- mean(2 * 1.96 * simple_mean_sd)
+rmse_simple <- rmse(test_Y, simple_mean)
+
+cat("\nSimple Mean Evaluation Metrics:\n")
+cat(sprintf("RMSE: %.3f\n", rmse_simple))
+cat(sprintf("Coverage: %.3f\n", coverage_simple))
+cat(sprintf("Interval Length: %.3f\n", interval_length_simple))
+```
+Expected output:
+```
+Simple Mean Evaluation Metrics:
+RMSE: 2.099
+Coverage: 0.940
+Interval Length: 8.444
+```
+
+
+
