@@ -1,6 +1,6 @@
 ---
 title: "Guided Simulation"
-author: Matthew Mcnear, haowen Wu, Meijie yue
+author: Matthew Mcnear, Haowen Wu, Meijie Yue
 format: html
 ---
 1.Introduction about this document
@@ -8,41 +8,50 @@ This document is created in order to provides step-by-step guidance on how to do
 
 2.Preparation for devtools package in R
 Before install ensembleR, please insure you have installed "devtools" in R:
+
 ```{r}
-install.packages("devtools")
+
+# install required packages, if necessary
+# install.packages("devtools")
+# devtools::install_github("mcanearm/ensembleR", subdir="ensembleR")
 library(devtools)
+library(ensembleR)
 ```
 3.Download the ensembleR zip and library the package
-、、、{r}
-devtools::install_local("/Username/ensembleR-dev/ensembleR")
-library(ensembleR)
-、、、、
+
 If no error occurs, the package is successfully installed.
 
 4.We're going to go through a simple guided test for regression examples. Let's use the abalone dataset.
 
 ## 4.1 List Available Functions
 After loading the package, you can list all available functions using:
-```r
+
+```{r}
 ls("package:ensembleR")
 ```
+
 Expected output:
-```plaintext
+
+```
 [1] "abalone"                         "bootLM"                          "fit_char_encoder"               
 [4] "fit_models"                      "fitAggregationFunction"          "fitAggregationFunction_bootLM"  
 [7] "fitAggregationFunction_EM"       "fitAggregationFunction_lm"       "fitAggregationFunction_quantile"
 [10] "rmse"
 ```
-##4.2Example:Using the `abalone`dataset
 
-If the package includes built-in datasets like `abalone`, you can load and inspect it:
+## 4.2 Example:Using the `abalone` dataset
 
+The package includes the `abalone` dataset for reference.
+
+```{r}
 # Load the dataset
 data(abalone)
 str(abalone)
 # Summarize the data
 summary(abalone)
-’‘’
+```
+
+```
 Expected output:
 > str(abalone)
 'data.frame':	4177 obs. of  9 variables:
@@ -70,4 +79,4 @@ Expected output:
  Mean   :0.2388   Mean   : 9.934  
  3rd Qu.:0.3290   3rd Qu.:11.000  
  Max.   :1.0050   Max.   :29.000  
-
+ ```
