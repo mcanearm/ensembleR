@@ -4,10 +4,12 @@ author: Matthew Mcnear, Haowen Wu, Meijie Yue
 format: html
 ---
 1.Introduction about this document
-This document is created in order to provides step-by-step guidance on how to download and use the ensembleR package from GitHub
+
+This document is created in order to provides step-by-step guidance on how to download and use the `ensembleR` package from GitHub.
 
 2.Preparation for devtools package in R
-Before install ensembleR, please insure you have installed "devtools" in R:
+
+Before install ensembleR, please insure you have installed `devtools` in R.
 
 ```{r}
 
@@ -17,11 +19,10 @@ Before install ensembleR, please insure you have installed "devtools" in R:
 library(devtools)
 library(ensembleR)
 ```
-3.Download the ensembleR zip and library the package
 
 If no error occurs, the package is successfully installed.
 
-4.We're going to go through a simple guided test for regression examples. Let's use the abalone dataset.
+We're going to go through a simple guided test for regression examples. Let's use the abalone dataset.
 
 ## 4.1 List Available Functions
 After loading the package, you can list all available functions using:
@@ -81,16 +82,15 @@ Expected output:
  Max.   :1.0050   Max.   :29.000  
  ```
 
-## 4.3 Sample usage， difference between fitting models with aggregation and without aggregation(Simple Mean Example)
+## 4.3 Sample usage, difference between fitting models with aggregation and without aggregation
 
-# Load Abalone Dataset
 ```{r}
+# Load Abalone Dataset
 data(abalone, package="ensembleR")
 abalone$Age <- abalone$Rings + 1.5
 abalone$Rings <- NULL
-```
+
 # Split Data as Training, Validation, and Test Sets
-```{r}
 set.seed(123) 
 train_idx <- sample(1:nrow(abalone), 0.8 * nrow(abalone))
 test_set_idx <- setdiff(1:nrow(abalone), train_idx)
@@ -110,20 +110,20 @@ val_Y <- val_df$Age
 test_X <- test_df[, -which(names(test_df) == "Age")]
 test_Y <- test_df$Age
 ```
-# Fit Models with Aggregation
+
+The models can be fit as an ensemble, and then an aggregation function can be fit
+using the held out validation set. This is the approach one would use when bringing
+your own regression models.
+
 ```{r}
 modelEnsemble <- fit_models(train_X, train_Y, validation_pct = 0.01)
 y_hats <- predict(modelEnsemble, val_X)
 aggregator <- fitAggregationFunction(val_Y, y_hats, method = "bootLM")
-```
 
-# Predict Using the Ensemble on Test Data
-```{r}
 test_y_hats <- predict(modelEnsemble, test_X)
 out <- predict(aggregator, test_y_hats, alpha = 0.05)
 ```
 
-# Evaluate the Model
 ```{r}
 coverage <- mean(out[, "lower"] <= test_Y & out[, "upper"] >= test_Y)
 interval_length <- mean(out[, "upper"] - out[, "lower"])
@@ -135,37 +135,19 @@ cat(sprintf("Coverage: %.3f\n", coverage))
 cat(sprintf("Interval Length: %.3f\n", interval_length))
 ```
 
-```
-# Expected output
-Evaluation Metrics:
-RMSE: 2.111
-Coverage: 0.945
-Interval Length: 8.406
-```
-
-# Fit Models Without Aggregation (Simple Mean Example)
+We can also fit the model and aggregation method all at once.
 ```{r}
-simple_mean <- rowMeans(test_y_hats)
-simple_mean_sd <- sd(val_Y - rowMeans(y_hats))
-
-coverage_simple <- mean(simple_mean - 1.96 * simple_mean_sd <= test_Y &
-                        simple_mean + 1.96 * simple_mean_sd >= test_Y)
-interval_length_simple <- mean(2 * 1.96 * simple_mean_sd)
-rmse_simple <- rmse(test_Y, simple_mean)
-
-cat("\nSimple Mean Evaluation Metrics:\n")
-cat(sprintf("RMSE: %.3f\n", rmse_simple))
-cat(sprintf("Coverage: %.3f\n", coverage_simple))
-cat(sprintf("Interval Length: %.3f\n", interval_length_simple))
+modelEnsemble <- fit_models(train_X, train_Y, aggregation_method = "bootLM", validation_pct = 0.20)
+out <- predict(modelEnsemble, test_X)
 ```
 
+```{r}
+coverage <- mean(out[, "lower"] <= test_Y & out[, "upper"] >= test_Y)
+interval_length <- mean(out[, "upper"] - out[, "lower"])
+rmse_val <- rmse(test_Y, out[, "mean"])
+
+cat("Evaluation Metrics:\n")
+cat(sprintf("RMSE: %.3f\n", rmse_val))
+cat(sprintf("Coverage: %.3f\n", coverage))
+cat(sprintf("Interval Length: %.3f\n", interval_length))
 ```
-# Expected output:
-Simple Mean Evaluation Metrics:
-RMSE: 2.099
-Coverage: 0.940
-Interval Length: 8.444
-```
-
-
-

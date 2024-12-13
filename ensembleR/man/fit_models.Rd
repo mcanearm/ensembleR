@@ -17,7 +17,7 @@ variables are handled effectively.}
 \item{Y}{A numeric vector for the response}
 
 \item{aggregation_method}{A string indicating the method to use for
-aggregation.}
+aggregation. For available aggregation methods, see \link[ensembleR]{fitAggregationFunction}}
 
 \item{validation_pct}{The percentage of the training data to hold apart
 for usage in fitting the aggregation method.}

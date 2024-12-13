@@ -1,6 +1,6 @@
 Package: ensembleR
 Type: Package
-Title: Package for creating an ensemble predictor from a matrix of arbitrary regressors
+Title: ensembleR: Model stacking package for fitting ensemble estimators
 Version: 0.1
 Date: 2024-10-31
 Author: Matthew McAnear, Haowen Wu, Meijie Yue

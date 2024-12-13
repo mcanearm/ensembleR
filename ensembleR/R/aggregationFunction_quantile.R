@@ -39,6 +39,8 @@ fitAggregationFunction_quantile <- function(Y, y_hat, ...) {
 #' @describeIn fitAggregationFunction_quantile General S3 method for the quantile prediction method
 #' @inheritParams fitAggregationFunction
 #' @inheritParams fitAggregationFunction_EM
+#' @param alpha The significance level for the prediction interval. Note that this parameter is
+#' hardcoded at 0.05 for now. A warning is raised if another alpha value is provided.
 predict.QuantileAggregation <- function(object, y_hat, alpha=0.05, ...) {
     y_hat <- as.matrix(y_hat)
 

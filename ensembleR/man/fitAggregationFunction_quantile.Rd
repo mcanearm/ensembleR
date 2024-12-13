@@ -21,7 +21,8 @@ in the model.}
 
 \item{object}{The fitted ModelAggregator_EM function}
 
-\item{alpha}{The significance level for the prediction interval}
+\item{alpha}{The significance level for the prediction interval. Note that this parameter is
+hardcoded at 0.05 for now. A warning is raised if another alpha value is provided.}
 }
 \description{
 Function Fit a quantile regression model to the data for aggregation.

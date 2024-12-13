@@ -10,7 +10,7 @@
 #' variables are handled effectively.
 #' @param Y A numeric vector for the response
 #' @param aggregation_method A string indicating the method to use for
-#' aggregation.
+#' aggregation. For available aggregation methods, see \link[ensembleR]{fitAggregationFunction}
 #' @param validation_pct The percentage of the training data to hold apart
 #' for usage in fitting the aggregation method.
 #' @import ranger e1071 xgboost
