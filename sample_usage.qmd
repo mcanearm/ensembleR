@@ -83,13 +83,13 @@ Expected output:
 
 ####4.3Sample usage， difference between fitting models with aggregation and without aggregation(Simple Mean Example)
 
-#Load Abalone Dataset
+# Load Abalone Dataset
 ```{r}
 data(abalone, package="ensembleR")
 abalone$Age <- abalone$Rings + 1.5
 abalone$Rings <- NULL
 ```
-#Split Data as Training, Validation, and Test Sets
+# Split Data as Training, Validation, and Test Sets
 ```{r}
 set.seed(123) 
 train_idx <- sample(1:nrow(abalone), 0.8 * nrow(abalone))
