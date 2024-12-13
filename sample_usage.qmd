@@ -15,7 +15,7 @@ Before install ensembleR, please insure you have installed `devtools` in R.
 
 # install required packages, if necessary
 # install.packages("devtools")
-# devtools::install_github("mcanearm/ensembleR", subdir="ensembleR")
+# devtools::install_github("mcanearm/ensembleR")
 library(devtools)
 library(ensembleR)
 ```
@@ -122,6 +122,7 @@ aggregator <- fitAggregationFunction(val_Y, y_hats, method = "bootLM")
 
 test_y_hats <- predict(modelEnsemble, test_X)
 out <- predict(aggregator, test_y_hats, alpha = 0.05)
+head(out)
 ```
 
 ```{r}
@@ -139,6 +140,7 @@ We can also fit the model and aggregation method all at once.
 ```{r}
 modelEnsemble <- fit_models(train_X, train_Y, aggregation_method = "bootLM", validation_pct = 0.20)
 out <- predict(modelEnsemble, test_X)
+head(out)
 ```
 
 ```{r}

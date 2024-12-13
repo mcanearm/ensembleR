@@ -14,7 +14,7 @@ Description:
     simple aggregation scheme. We include multiple of such aggregation methods
     so that arbitrary regressors can be used in conjunction to make a final, more
     optimal predictor.
-License: GPL-3
+License: GPL-3 + file LICENSE
 RoxygenNote: 7.3.2
 Imports: 
     ranger,
