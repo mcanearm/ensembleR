@@ -16,7 +16,7 @@ Before install ensembleR, please insure you have installed `devtools` in R.
 # install required packages, if necessary
 # install.packages("devtools")
 # devtools::install_github("mcanearm/ensembleR")
-# library(devtools)
+library(devtools)
 library(ensembleR)
 ```
 
