@@ -115,7 +115,7 @@ or together.
 
 ```{r}
 # all at once
-modelEnsemble <- fit_models(train_X, train_Y, validation_pct=0.01, aggregation_method = "bootLM")
+modelEnsemble <- fit_models(train_X, train_Y, validation_pct=0.2, aggregation_method = "bootLM")
 y_tilde <- predict(modelEnsemble, test_X)
 head(y_tilde)
 ```
